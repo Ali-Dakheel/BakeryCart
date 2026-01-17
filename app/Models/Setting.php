@@ -36,4 +36,13 @@ class Setting extends Model
         ];
     }
 
+    public static function get(string $key, $default = null)
+    {
+        $setting = static::find($key);
+        if (!$setting) {
+            return $default;
+        }
+        return static::castValue($setting->value, $setting->type);
+    }
+
 }
