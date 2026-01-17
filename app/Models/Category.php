@@ -24,6 +24,7 @@ class Category extends Model
         'sort_order',
         'is_active'
     ];
+    /** @return array<string, string> */
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
@@ -38,9 +39,8 @@ class Category extends Model
     /** "@return HasMany<Category> */
     public function children(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
     }
-
     /** @return HasMany<CategoryTranslation> */
     public function translations() : HasMany
     {
