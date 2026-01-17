@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use function PHPUnit\Framework\isArray;
 
 class Setting extends Model
 {
@@ -45,4 +46,32 @@ class Setting extends Model
         return static::castValue($setting->value, $setting->type);
     }
 
+    public static function set(string $key, $value, string $type = 'string'): bool
+    {
+        return static::updateOrCreate(
+            ['key' => $key],
+            [
+                'value' => is_array($value) ? json_encode($value) : $value,
+                'type' => $type,
+            ]
+        )->exists();
+    }
+
+    protected static function castValue($value, string $type)
+    {
+        return match($type) {
+            'integer' => (int) $value,
+            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+            'json' => json_decode($value, true),
+            default => $value,
+        };
+    }
+    public function scopePublic($query)
+    {
+        return $query->where('is_public', true);
+    }
+    public function scopeGroup($query, string $group)
+    {
+        return $query->where('group', $group);
+    }
 }
