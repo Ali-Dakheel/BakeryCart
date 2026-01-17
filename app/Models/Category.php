@@ -32,52 +32,57 @@ class Category extends Model
 
 
     /** @return BelongsTo<Category> */
-    public function parent() : belongsTo
+    public function parent(): belongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
+
     /** "@return HasMany<Category> */
     public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
     }
+
     /** @return HasMany<CategoryTranslation> */
-    public function translations() : HasMany
+    public function translations(): HasMany
     {
         return $this->hasMany(CategoryTranslation::class, 'category_id');
     }
-    /**
-     * Get translation for specific locale
+
+    /** @return HasMany<Product> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class, 'category_id');
+    }
+
+    /** @param string $locale
+     * @return Model<CategoryTranslation|null>
      */
     public function translate(string $locale = 'en'): ?CategoryTranslation
     {
-        return $this->translations()
-            ->where('locale', $locale)
-            ->first();
+        return $this->translations()->where('locale', $locale)->first();
     }
 
-    /**
-     * Get translated name for current locale
-     */
+    /** @return string|null */
     public function getNameAttribute(): ?string
     {
-        $locale = app()->getLocale(); // Gets current app locale
+        $locale = app()->getLocale();
         return $this->translate($locale)?->name;
     }
 
-    /**
-     * Scope: Get only active categories
-     */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope: Get only top-level categories (no parent)
-     */
     public function scopeTopLevel($query)
     {
         return $query->whereNull('parent_id');
     }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('id');
+    }
+
 }
