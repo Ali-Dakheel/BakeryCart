@@ -169,6 +169,26 @@ final class Product extends Model
                 ->orWhere('current_stock', '>', 0);
         });
     }
+    public function approvedReviews(): HasMany
+    {
+        return $this->hasMany(Review::class)
+            ->where('is_approved', true)
+            ->orderBy('created_at', 'desc');
+    }
 
+    /**
+     * Get average rating
+     */
+    public function getAverageRatingAttribute(): float
+    {
+        return $this->approvedReviews()->avg('rating') ?? 0;
+    }
 
+    /**
+     * Get total reviews count
+     */
+    public function getReviewsCountAttribute(): int
+    {
+        return $this->approvedReviews()->count();
+    }
 }
