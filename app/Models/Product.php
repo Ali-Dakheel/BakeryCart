@@ -181,5 +181,62 @@ class Product extends Model
                     ->orWhere('available_until', '>=', now());
             });
     }
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
+    }
+    public function scopeInStock($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('track_inventory', false)
+                ->orWhere('current_stock', '>', 0);
+        });
+    }
+    public function scopePriceRange($query, array $range)
+    {
+        if (isset($range['min'])) {
+            $query->where('price', '>=', $range['min']);
+        }
 
+        if (isset($range['max'])) {
+            $query->where('price', '<=', $range['max']);
+        }
+
+        return $query;
+    }
+
+    public function scopeSearch($query, string $term)
+    {
+        return $query->whereHas('translations', function($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+            ->orWhere('description', 'like', "%{$term}%")
+            ->orWhere('sku', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopePopular($query)
+    {
+        return $query->orderBy('sales_count', 'desc');
+    }
+
+    public function incrementViews(): void
+    {
+        $this->increment('views_count');
+    }
+    public function incrementSales(int $quantity = 1): void
+    {
+        $this->increment('sales_count', $quantity);
+    }
+    public function decrementStock(int $quantity): void
+    {
+        if ($this->track_inventory) {
+            $this->decrement('current_stock', $quantity);
+        }
+    }
+    public function incrementStock(int $quantity): void
+    {
+        if ($this->track_inventory) {
+            $this->increment('current_stock', $quantity);
+        }
+    }
 }
