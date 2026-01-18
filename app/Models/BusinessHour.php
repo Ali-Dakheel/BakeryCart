@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class BusinessHour extends Model
+final class BusinessHour extends Model
 {
     use HasFactory;
 
@@ -49,6 +51,5 @@ class BusinessHour extends Model
 
         return static::isOpenAt($dayOfWeek, $time);
     }
-
 
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model
+final class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -89,23 +91,10 @@ class Product extends Model
             ->orderBy('sort_order');
     }
 
-    /** @return HasMany<ProductImage> */
-    public function primaryImage(): HasMany
-    {
-        return $this->hasMany(ProductImage::class)->where('is_primary', true)->limit(1);
-    }
-
     /** @return HasMany<ProductVariant> */
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)
-            ->orderBy('sort_order');
-    }
-
-    public function activeVariants(): HasMany
-    {
-        return $this->hasMany(ProductVariant::class)
-            ->where('is_available', true)
             ->orderBy('sort_order');
     }
     /** @return HasMany<Review> */
@@ -113,26 +102,25 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
-
-    /** @return HasMany<Review> */
-    public function approvedReviews(): HasMany
+    /** @return HasMany<CartItem> */
+    public function cartItems(): HasMany
     {
-        return $this->hasMany(Review::class)
-            ->where('is_approved', true)
-            ->orderBy('created_at', 'desc');
+        return $this->hasMany(CartItem::class);
     }
 
-    public function translate(string $locale = 'en'): ?ProductTranslation
+    /** @return HasMany<OrderItem> */
+    public function orderItems(): HasMany
     {
-        return $this->translations()
-            ->where('locale', $locale)
-            ->first();
+        return $this->hasMany(OrderItem::class);
     }
-    public function getNameAttribute(): ?string
+
+    /** @return HasMany<Wishlist> */
+    public function wishlists(): HasMany
     {
-        $locale = app()->getLocale();
-        return $this->translate($locale)?->name;
+        return $this->hasMany(Wishlist::class);
     }
+
+    /** Accessors */
     public function getIsOnSaleAttribute(): bool
     {
         return $this->compare_at_price && $this->compare_at_price > $this->price;
@@ -145,46 +133,35 @@ class Product extends Model
 
         return round((($this->compare_at_price - $this->price) / $this->compare_at_price) * 100, 2);
     }
+
     public function getInStockAttribute(): bool
     {
-        if (!$this->track_inventory) {
-            return true;
-        }
-
-        return $this->current_stock > 0;
+        return !$this->track_inventory || $this->current_stock > 0;
     }
     public function getIsLowStockAttribute(): bool
     {
-        if (!$this->track_inventory) {
-            return false;
-        }
+        return $this->track_inventory
+            && $this->current_stock > 0
+            && $this->current_stock <= $this->low_stock_threshold;
+    }
 
-        return $this->current_stock > 0 && $this->current_stock <= $this->low_stock_threshold;
-    }
-    public function getAverageRatingAttribute(): float
+    public function getNameAttribute(): ?string
     {
-        return $this->approvedReviews()->avg('rating') ?? 0;
-    }
-    public function getReviewsCountAttribute(): int
-    {
-        return $this->approvedReviews()->count();
+        $locale = app()->getLocale();
+        return $this->translations()
+            ->where('locale', $locale)
+            ->first()?->name;
     }
     public function scopeAvailable($query)
     {
-        return $query->where('is_available', true)
-            ->where(function ($q) {
-                $q->whereNull('available_from')
-                    ->orWhere('available_from', '<=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('available_until')
-                    ->orWhere('available_until', '>=', now());
-            });
+        return $query->where('is_available', true);
     }
+
     public function scopeFeatured($query)
     {
         return $query->where('is_featured', true);
     }
+
     public function scopeInStock($query)
     {
         return $query->where(function ($q) {
@@ -192,51 +169,6 @@ class Product extends Model
                 ->orWhere('current_stock', '>', 0);
         });
     }
-    public function scopePriceRange($query, array $range)
-    {
-        if (isset($range['min'])) {
-            $query->where('price', '>=', $range['min']);
-        }
 
-        if (isset($range['max'])) {
-            $query->where('price', '<=', $range['max']);
-        }
 
-        return $query;
-    }
-
-    public function scopeSearch($query, string $term)
-    {
-        return $query->whereHas('translations', function($q) use ($term) {
-            $q->where('name', 'like', "%{$term}%")
-            ->orWhere('description', 'like', "%{$term}%")
-            ->orWhere('sku', 'like', "%{$term}%");
-        });
-    }
-
-    public function scopePopular($query)
-    {
-        return $query->orderBy('sales_count', 'desc');
-    }
-
-    public function incrementViews(): void
-    {
-        $this->increment('views_count');
-    }
-    public function incrementSales(int $quantity = 1): void
-    {
-        $this->increment('sales_count', $quantity);
-    }
-    public function decrementStock(int $quantity): void
-    {
-        if ($this->track_inventory) {
-            $this->decrement('current_stock', $quantity);
-        }
-    }
-    public function incrementStock(int $quantity): void
-    {
-        if ($this->track_inventory) {
-            $this->increment('current_stock', $quantity);
-        }
-    }
 }

@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProductVariant extends Model
+final class ProductVariant extends Model
 {
     use HasFactory;
 
@@ -45,6 +48,18 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /** @return BelongsTo<CartItem> */
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    /** @return BelongsTo<OrderItem> */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     /**
      * Check if variant is in stock
      *
@@ -61,13 +76,5 @@ class ProductVariant extends Model
     public function scopeInStock($query)
     {
         return $query->where('stock', '>', 0);
-    }
-    public function decrementStock(int $quantity): void
-    {
-        $this->decrement('stock', $quantity);
-    }
-    public function incrementStock(int $quantity): void
-    {
-        $this->increment('stock', $quantity);
     }
 }
