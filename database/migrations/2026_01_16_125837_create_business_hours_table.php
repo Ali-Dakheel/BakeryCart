@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('business_hours', function (Blueprint $table) {
             $table->id();
+            $table->integer('day_of_week'); // 0=Sunday, 6=Saturday
+            $table->time('opening_time')->nullable();
+            $table->time('closing_time')->nullable();
+            $table->boolean('is_closed')->default(false);
+
             $table->timestamps();
+
+            $table->unique('day_of_week');
         });
     }
 

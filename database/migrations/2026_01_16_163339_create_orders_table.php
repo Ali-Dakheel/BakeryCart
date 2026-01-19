@@ -52,6 +52,7 @@ return new class extends Migration
 
             $table->string('status')->default('pending');
             $table->string('payment_status')->default('pending');
+            $table->string('fulfillment_status')->default('unfulfilled');
 
             $table->date('delivery_date')->nullable();
             $table->string('delivery_time_slot')->nullable();

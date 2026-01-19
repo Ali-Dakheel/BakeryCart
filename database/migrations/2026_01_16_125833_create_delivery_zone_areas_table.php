@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('delivery_zone_areas', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('delivery_zone_id')
+                ->constrained('delivery_zones')
+                ->onDelete('cascade');
+            $table->string('area_name');
             $table->timestamps();
+
+            $table->index('delivery_zone_id');
+            $table->index('area_name');
         });
     }
 

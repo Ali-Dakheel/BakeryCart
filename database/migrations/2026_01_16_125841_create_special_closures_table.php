@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('special_closures', function (Blueprint $table) {
             $table->id();
+            $table->date('date');
+            $table->string('reason');
             $table->timestamps();
+
+            $table->index('date');
         });
     }
 
