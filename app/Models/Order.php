@@ -83,10 +83,10 @@ final class Order extends Model
 
     /** @return BelongsTo<> */
 
-   public function shippingAddress(): BelongsTo
-   {
-       return $this->belongsTo(Address::class, 'shipping_address_id');
-   }
+    public function shippingAddress(): BelongsTo
+    {
+        return $this->belongsTo(Address::class, 'shipping_address_id');
+    }
 
     /** @return HasMany<OrderItem> */
     public function items(): HasMany
@@ -106,6 +106,12 @@ final class Order extends Model
     {
         return $this->hasOne(OrderCancellation::class);
     }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
 
     public function getIsCancelableAttribute(): bool
     {

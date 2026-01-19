@@ -120,6 +120,13 @@ final class Product extends Model
         return $this->hasMany(Wishlist::class);
     }
 
+    public function priceHistory(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)
+            ->orderBy('changed_at', 'desc');
+    }
+
+
     /** Accessors */
     public function getIsOnSaleAttribute(): bool
     {

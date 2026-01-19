@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Coupon extends Model
@@ -43,6 +44,11 @@ final class Coupon extends Model
             'is_active' => 'boolean',
             'applicable_ids' => 'array',
         ];
+    }
+
+    public function usages(): HasMany
+    {
+        return $this->hasMany(CouponUsage::class);
     }
 
     public function scopeActive($query)
