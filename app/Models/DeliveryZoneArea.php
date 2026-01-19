@@ -21,6 +21,6 @@ final class DeliveryZoneArea extends Model
     /** @return BelongsTo<DeliveryZone, DeliveryZoneArea> */
     public function deliveryZone(): BelongsTo
     {
-        return $this->belongsTo(DeliveryZoneArea::class);
+        return $this->belongsTo(DeliveryZone::class);
     }
 }

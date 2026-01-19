@@ -83,10 +83,10 @@ final class Order extends Model
 
     /** @return BelongsTo<> */
 
-//    public function shippingAddress(): BelongsTo
-//    {
-//        return $this->belongsTo(Address::class, 'shipping_address_id');
-//    }
+   public function shippingAddress(): BelongsTo
+   {
+       return $this->belongsTo(Address::class, 'shipping_address_id');
+   }
 
     /** @return HasMany<OrderItem> */
     public function items(): HasMany

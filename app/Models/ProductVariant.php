@@ -48,7 +48,7 @@ final class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    /** @return BelongsTo<CartItem> */
+    /** @return HasMany<CartItem> */
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);

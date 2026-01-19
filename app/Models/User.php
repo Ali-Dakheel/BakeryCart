@@ -68,6 +68,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class);
     }
+    /**
+     * Summary of carts
+     * @return HasMany<Cart>
+     */
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
 
+    }
 
 }
