@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\ProductService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -27,6 +30,7 @@ final class ProductController extends Controller
         $products = QueryBuilder::for(Product::class)
             ->where('is_available', true)
             ->whereNull('deleted_at')
+            ->with('translations')
             ->allowedFilters([
                 AllowedFilter::exact('category_id'),
                 AllowedFilter::exact('is_featured'),
@@ -76,4 +80,55 @@ final class ProductController extends Controller
 
         return new ProductResource($product);
     }
+
+    public function featured(): AnonymousResourceCollection
+    {
+        $limit = (int)request()->input('limit', 10);
+        $products = $this->productService->getFeatured($limit);
+
+        return ProductResource::collection($products);
+    }
+
+    public function popular(): AnonymousResourceCollection
+    {
+        $limit = (int)request()->input('limit', 10);
+        $products = $this->productService->getPopular($limit);
+
+        return ProductResource::collection($products);
+    }
+
+    public function store(StoreProductRequest $request): ProductResource
+    {
+        $validated = $request->validated();
+        $translations = $validated['translations'] ?? [];
+        unset($validated['translations']);
+        $product = Product::create($validated);
+        $product->translations()->createMany($translations);
+        $product->load(['translations', 'category']);
+        return new ProductResource($product);
+    }
+
+    public function update(UpdateProductRequest $request, Product $product): ProductResource
+    {
+        $validated = $request->validated();
+        $translations = $validated['translations'] ?? [];
+        unset($validated['translations']);
+        $product->update($validated);
+        if ($translations !== null) {
+            foreach ($translations as $translation) {
+                $product->translations()->updateOrCreate([
+                    'locale' => $translation['locale']],
+                    $translation);
+            }
+        }
+        $product->load(['translations', 'images', 'variants', 'category']);
+        return new ProductResource($product);
+    }
+
+    public function destroy(Product $product): JsonResponse
+    {
+        $product->delete();
+        return response()->json(['message' => 'Product deleted successfully'], 204);
+    }
+
 }
