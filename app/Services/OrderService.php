@@ -11,6 +11,7 @@ use App\Models\OrderCancellation;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Models\OrderItem;
 
 final readonly class OrderService
 {
