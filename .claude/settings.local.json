@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir /b \"d:\\\\Ali-d\\\\Herd\\\\easybake\"\")"
+      "Bash(dir /b \"d:\\\\Ali-d\\\\Herd\\\\easybake\"\")",
+      "Bash(php artisan migrate:fresh:*)"
     ]
   }
 }

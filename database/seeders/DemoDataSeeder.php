@@ -159,7 +159,7 @@ final class DemoDataSeeder extends Seeder
                             'order_id' => $order->id,
                             'rating' => fake()->randomElement([4, 4, 5, 5, 5]), // Weighted towards positive
                             'title' => fake()->optional(0.7)->sentence(4),
-                            'comment' => fake()->optional(0.8)->paragraph(),
+                            'comment' => fake()->paragraph(), // Required field
                             'is_verified_purchase' => true,
                             'is_approved' => fake()->boolean(90),
                             'helpful_count' => fake()->numberBetween(0, 20),
