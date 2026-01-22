@@ -176,6 +176,13 @@ final class Product extends Model
                 ->orWhere('current_stock', '>', 0);
         });
     }
+
+    public function scopePopular(Builder $query, $minSales = 10): Builder
+    {
+        return $query->where('sales_count', '>=', (int) $minSales)
+            ->orderBy('sales_count', 'desc');
+    }
+
     public function approvedReviews(): HasMany
     {
         return $this->hasMany(Review::class)
