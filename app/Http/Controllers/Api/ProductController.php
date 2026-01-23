@@ -97,7 +97,7 @@ final class ProductController extends Controller
         return ProductResource::collection($products);
     }
 
-    public function store(StoreProductRequest $request): ProductResource
+    public function store(StoreProductRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $translations = $validated['translations'] ?? [];
@@ -105,10 +105,12 @@ final class ProductController extends Controller
         $product = Product::create($validated);
         $product->translations()->createMany($translations);
         $product->load(['translations', 'category']);
-        return new ProductResource($product);
+        return (new ProductResource($product))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(UpdateProductRequest $request, Product $product): ProductResource
+    public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         $validated = $request->validated();
         $translations = $validated['translations'] ?? [];
@@ -122,7 +124,9 @@ final class ProductController extends Controller
             }
         }
         $product->load(['translations', 'images', 'variants', 'category']);
-        return new ProductResource($product);
+        return (new ProductResource($product))
+            ->response()
+            ->setStatusCode(200);
     }
 
     public function destroy(Product $product): JsonResponse

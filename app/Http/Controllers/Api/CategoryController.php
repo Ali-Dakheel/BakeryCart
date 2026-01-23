@@ -56,7 +56,7 @@ final class CategoryController extends Controller
         return new CategoryResource($category);
     }
 
-    public function store(StoreCategoryRequest $request): CategoryResource
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $translation = $validated['translations'] ?? [];
@@ -64,10 +64,12 @@ final class CategoryController extends Controller
         $category = Category::create($validated);
         $category->translations()->createMany($translation);
         $category->load(['translations', 'parent']);
-        return new CategoryResource($category);
+        return (new CategoryResource($category))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
+    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
         $validated = $request->validated();
         $translations = $validated['translations'] ?? [];
@@ -82,13 +84,15 @@ final class CategoryController extends Controller
             }
         }
         $category->load(['translations', 'parent', 'children']);
-        return new CategoryResource($category);
+        return (new CategoryResource($category))
+            ->response()
+            ->setStatusCode(200);
     }
     public function destroy(Category $category): JsonResponse
     {
         $category->delete();
         return response()->json([
             'message' => 'Category deleted successfully'
-        ], 200);
+        ], 204);
     }
 }
