@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Auth\Authcontroller;
@@ -60,5 +61,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{order}', [OrderController::class, 'show']);
         Route::post('{order}/cancel', [OrderController::class, 'cancel']);
     });
+
+    Route::prefix('addresses')->group(function () {
+        Route::get('/', [AddressController::class, 'index']);
+        Route::post('/', [AddressController::class, 'store']);
+        Route::get('{address}', [AddressController::class, 'show']);
+        Route::put('{address}', [AddressController::class, 'update']);
+        Route::delete('{address}', [AddressController::class, 'destroy']);
+        Route::patch('{address}/default', [AddressController::class, 'setDefault']);
+    });
+
 
 });
