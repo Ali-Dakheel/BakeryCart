@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Auth\Authcontroller;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -31,6 +32,14 @@ Route::prefix('products')->group(function () {
 Route::prefix('categories')->group(function () {
     Route::get('/', [CategoryController::class, 'index']);
     Route::get('{category}', [CategoryController::class, 'show']);
+});
+
+Route::prefix('products/{product}/reviews')->group(function () {
+    Route::get('/', [ReviewController::class, 'index']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [ReviewController::class, 'store']);
+    });
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -71,5 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('{address}/default', [AddressController::class, 'setDefault']);
     });
 
+    Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
+    Route::post('reviews/{review}/helpful', [ReviewController::class, 'markHelpful']);
 
 });
