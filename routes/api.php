@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\Authcontroller;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -82,5 +83,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
     Route::post('reviews/{review}/helpful', [ReviewController::class, 'markHelpful']);
+
+    Route::prefix('wishlist')->group(function () {
+        Route::get('/', [WishlistController::class, 'index']);
+        Route::post('products/{product}', [WishlistController::class, 'toggle']);
+    });
 
 });
