@@ -4,7 +4,7 @@
 
 BakeryCart is a full-featured e-commerce platform built for **Easy Bake (@easybake.bh)**, a wholesale French bakery in Bahrain. This is a learning project focused on mastering Laravel 12 + Next.js 15 with production-grade architecture.
 
-**Status**: Database schema and models completed. Currently ready for factories, seeders, and API development.
+**Status**: Database schema, models, and API development completed. Currently ready for Filament admin panel setup.
 
 ---
 
@@ -15,7 +15,7 @@ BakeryCart is a full-featured e-commerce platform built for **Easy Bake (@easyba
 - **PostgreSQL 16** (for JSONB support and advanced features)
 - **Redis** (caching and session storage)
 - **Laravel Sanctum** (cookie-based session authentication for SPAs)
-- **Laravel Filament 3** (admin panel)
+- **Laravel Filament 5** (admin panel)
 - **Spatie Laravel Query Builder** (API filtering and sorting)
 - **Spatie Laravel Permission** (roles and permissions)
 
@@ -70,8 +70,11 @@ app/
 ├── Models/           # Eloquent models (relationships, casts, simple scopes only)
 ├── Services/         # Business logic (complex queries, transactions, calculations)
 ├── Http/
-│   ├── Controllers/  # Thin controllers (delegate to services)
-│   └── Requests/     # Form validation
+│   ├── Controllers/
+│   │   ├── Api/      # Customer-facing API controllers
+│   │   └── Auth/     # Authentication controllers
+│   ├── Requests/     # Form validation
+│   └── Resources/    # API Resources (JSON transformers)
 └── ...
 
 database/
@@ -313,6 +316,61 @@ calculateDeliveryFee(Address $address, float $cartTotal): float
 
 ---
 
+## API Controllers (9 Controllers)
+
+All controllers follow strict standards:
+- ✅ `declare(strict_types=1);`
+- ✅ `final class`
+- ✅ Thin controllers delegating to services
+- ✅ Spatie Query Builder for filtering/sorting
+- ✅ Form Request validation
+- ✅ API Resources for response transformation
+
+### Controller Structure
+```
+app/Http/Controllers/
+├── Controller.php          # Base controller
+├── Api/
+│   ├── ProductController   # Products CRUD + featured/popular
+│   ├── CategoryController  # Categories CRUD
+│   ├── CartController      # Cart management
+│   ├── OrderController     # Customer orders
+│   ├── AddressController   # User addresses
+│   ├── ReviewController    # Product reviews
+│   └── WishlistController  # User wishlist
+└── Auth/
+    └── AuthController      # Authentication (register, login, logout)
+```
+
+### API Endpoints Summary
+
+**Public Endpoints:**
+- `GET /api/products` - List products (filterable, sortable)
+- `GET /api/products/featured` - Featured products
+- `GET /api/products/popular` - Popular products
+- `GET /api/products/{id}` - Product details
+- `GET /api/categories` - List categories
+- `GET /api/categories/{id}` - Category details
+- `GET /api/products/{id}/reviews` - Product reviews
+
+**Auth Endpoints:**
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout (protected)
+- `GET /api/auth/user` - Current user (protected)
+- `POST /api/auth/change-password` - Change password (protected)
+
+**Protected Endpoints (require auth):**
+- `GET/POST/PATCH/DELETE /api/cart/*` - Cart management
+- `GET/POST /api/orders/*` - Order management
+- `GET/POST/PUT/DELETE /api/addresses/*` - Address management
+- `POST /api/products/{id}/reviews` - Submit review
+- `DELETE /api/reviews/{id}` - Delete own review
+- `POST /api/reviews/{id}/helpful` - Mark review helpful
+- `GET/POST /api/wishlist/*` - Wishlist management
+
+---
+
 ## Authentication & Authorization
 
 ### Roles (Spatie Permission)
@@ -522,19 +580,28 @@ php artisan make:seeder ProductSeeder
 - ✅ Service classes (4 services)
 - ✅ Relationships and business logic
 
-### Phase 2: Data Generation (CURRENT)
+### Phase 2: Data Generation
 - ⏳ Factories for all models
 - ⏳ Seeders with realistic data
 - ⏳ Test data generation
 
-### Phase 3: API Development
-- ⏳ API controllers with Spatie Query Builder
-- ⏳ Form Request validation
-- ⏳ API routes
-- ⏳ Authentication endpoints
+### Phase 3: API Development (COMPLETED ✅)
+- ✅ API controllers with Spatie Query Builder
+- ✅ Form Request validation
+- ✅ API routes
+- ✅ Authentication endpoints (register, login, logout, user, change-password)
+- ✅ Products API (index, show, featured, popular, CRUD)
+- ✅ Categories API (index, show, CRUD)
+- ✅ Cart API (show, add, update, remove, clear)
+- ✅ Orders API (index, store, show, cancel)
+- ✅ Addresses API (index, store, show, update, destroy, setDefault)
+- ✅ Reviews API (index, store, markHelpful, destroy)
+- ✅ Wishlist API (index, toggle)
+- ✅ API Resources for JSON transformation
 
-### Phase 4: Admin Panel
-- ⏳ Filament resources
+### Phase 4: Admin Panel (CURRENT)
+- ⏳ Laravel Filament 3 setup
+- ⏳ Filament resources for all models
 - ⏳ Custom admin pages
 - ⏳ Dashboard widgets
 
@@ -633,4 +700,4 @@ php artisan tinker
 ---
 
 **Last Updated**: January 2026
-**Project Status**: Models & Services Complete - Ready for Factories & API Development
+**Project Status**: API Development Complete - Ready for Filament Admin Panel

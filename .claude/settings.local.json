@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dir /b \"d:\\\\Ali-d\\\\Herd\\\\easybake\"\")",
       "Bash(php artisan migrate:fresh:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(php artisan:*)",
+      "WebFetch(domain:filamentphp.com)"
     ]
   }
 }

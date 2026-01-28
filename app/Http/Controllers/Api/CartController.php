@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Cart\AddItemRequest;
 use App\Http\Requests\Cart\UpdateItemRequest;
