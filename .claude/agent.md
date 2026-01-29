@@ -4,7 +4,7 @@
 
 BakeryCart is a full-featured e-commerce platform built for **Easy Bake (@easybake.bh)**, a wholesale French bakery in Bahrain. This is a learning project focused on mastering Laravel 12 + Next.js 15 with production-grade architecture.
 
-**Status**: Database schema, models, API development, and Filament admin panel setup completed. Resources created and customized for all main models.
+**Status**: Database, Models, API, Filament Admin, and API Production Hardening completed. Next: Frontend (Next.js 15).
 
 ---
 
@@ -69,12 +69,19 @@ BakeryCart is a full-featured e-commerce platform built for **Easy Bake (@easyba
 app/
 ├── Models/           # Eloquent models (relationships, casts, simple scopes only)
 ├── Services/         # Business logic (complex queries, transactions, calculations)
+├── Policies/         # Authorization policies (OrderPolicy, AddressPolicy, etc.)
 ├── Http/
 │   ├── Controllers/
-│   │   ├── Api/      # Customer-facing API controllers
-│   │   └── Auth/     # Authentication controllers
+│   │   └── Api/
+│   │       └── V1/   # Versioned API controllers
+│   ├── Middleware/
+│   │   └── ApiVersionHeader.php  # Adds X-API-Version header
+│   ├── Traits/
+│   │   └── ApiResponse.php       # Standardized JSON responses
 │   ├── Requests/     # Form validation
 │   └── Resources/    # API Resources (JSON transformers)
+├── Providers/
+│   └── RateLimitServiceProvider.php  # Rate limiting rules
 └── ...
 
 database/
@@ -316,7 +323,7 @@ calculateDeliveryFee(Address $address, float $cartTotal): float
 
 ---
 
-## API Controllers (9 Controllers)
+## API Controllers (8 V1 Controllers)
 
 All controllers follow strict standards:
 - ✅ `declare(strict_types=1);`
@@ -325,49 +332,53 @@ All controllers follow strict standards:
 - ✅ Spatie Query Builder for filtering/sorting
 - ✅ Form Request validation
 - ✅ API Resources for response transformation
+- ✅ `ApiResponse` trait for standardized responses
+- ✅ `$this->authorize()` for policy-based authorization
 
 ### Controller Structure
 ```
 app/Http/Controllers/
-├── Controller.php          # Base controller
-├── Api/
-│   ├── ProductController   # Products CRUD + featured/popular
-│   ├── CategoryController  # Categories CRUD
-│   ├── CartController      # Cart management
-│   ├── OrderController     # Customer orders
-│   ├── AddressController   # User addresses
-│   ├── ReviewController    # Product reviews
-│   └── WishlistController  # User wishlist
-└── Auth/
-    └── AuthController      # Authentication (register, login, logout)
+├── Controller.php          # Base controller (uses AuthorizesRequests)
+└── Api/
+    └── V1/                 # Versioned API (v1)
+        ├── AuthController      # Authentication (register, login, logout, user, changePassword)
+        ├── ProductController   # Products CRUD + featured/popular
+        ├── CategoryController  # Categories CRUD
+        ├── CartController      # Cart management
+        ├── OrderController     # Customer orders
+        ├── AddressController   # User addresses
+        ├── ReviewController    # Product reviews
+        └── WishlistController  # User wishlist
 ```
 
-### API Endpoints Summary
+### API Endpoints Summary (V1)
 
-**Public Endpoints:**
-- `GET /api/products` - List products (filterable, sortable)
-- `GET /api/products/featured` - Featured products
-- `GET /api/products/popular` - Popular products
-- `GET /api/products/{id}` - Product details
-- `GET /api/categories` - List categories
-- `GET /api/categories/{id}` - Category details
-- `GET /api/products/{id}/reviews` - Product reviews
+All endpoints are prefixed with `/api/v1/`. Legacy `/api/*` requests redirect to `/api/v1/*`.
 
-**Auth Endpoints:**
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout (protected)
-- `GET /api/auth/user` - Current user (protected)
-- `POST /api/auth/change-password` - Change password (protected)
+**Public Endpoints** (throttle: 60/min):
+- `GET /api/v1/products` - List products (filterable, sortable)
+- `GET /api/v1/products/featured` - Featured products
+- `GET /api/v1/products/popular` - Popular products
+- `GET /api/v1/products/{id}` - Product details
+- `GET /api/v1/categories` - List categories
+- `GET /api/v1/categories/{id}` - Category details
+- `GET /api/v1/products/{id}/reviews` - Product reviews
 
-**Protected Endpoints (require auth):**
-- `GET/POST/PATCH/DELETE /api/cart/*` - Cart management
-- `GET/POST /api/orders/*` - Order management
-- `GET/POST/PUT/DELETE /api/addresses/*` - Address management
-- `POST /api/products/{id}/reviews` - Submit review
-- `DELETE /api/reviews/{id}` - Delete own review
-- `POST /api/reviews/{id}/helpful` - Mark review helpful
-- `GET/POST /api/wishlist/*` - Wishlist management
+**Auth Endpoints** (throttle: 5/min):
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/logout` - User logout (protected)
+- `GET /api/v1/auth/user` - Current user (protected)
+- `POST /api/v1/auth/change-password` - Change password (protected)
+
+**Protected Endpoints** (throttle: 30/min, transactional: 10/min):
+- `GET/POST/PATCH/DELETE /api/v1/cart/*` - Cart management
+- `GET/POST /api/v1/orders/*` - Order management (POST is transactional)
+- `GET/POST/PUT/DELETE /api/v1/addresses/*` - Address management (mutations are transactional)
+- `POST /api/v1/products/{id}/reviews` - Submit review
+- `DELETE /api/v1/reviews/{id}` - Delete own review
+- `POST /api/v1/reviews/{id}/helpful` - Mark review helpful
+- `GET/POST /api/v1/wishlist/*` - Wishlist management
 
 ---
 
@@ -535,15 +546,19 @@ php artisan make:seeder ProductSeeder
 
 ---
 
-## API Response Format
+## API Response Format (Standardized via ApiResponse Trait)
 
 ### Success Response
 ```json
 {
+  "success": true,
+  "message": "Optional message",
   "data": {
-    "id": 1,
-    "name": "Butter Croissant",
-    "price": "0.500"
+    "product": {
+      "id": 1,
+      "name": "Butter Croissant",
+      "price": "0.500"
+    }
   }
 }
 ```
@@ -551,11 +566,21 @@ php artisan make:seeder ProductSeeder
 ### Paginated Response
 ```json
 {
-  "data": [...],
-  "links": {...},
+  "success": true,
+  "orders": [...],
   "meta": {
     "current_page": 1,
-    "total": 50
+    "last_page": 5,
+    "per_page": 15,
+    "total": 50,
+    "from": 1,
+    "to": 15
+  },
+  "links": {
+    "first": "...",
+    "last": "...",
+    "prev": null,
+    "next": "..."
   }
 }
 ```
@@ -563,12 +588,17 @@ php artisan make:seeder ProductSeeder
 ### Error Response
 ```json
 {
+  "success": false,
   "message": "Product not found",
   "errors": {
     "product_id": ["The selected product is invalid."]
   }
 }
 ```
+
+### Response Headers
+All V1 API responses include:
+- `X-API-Version: v1`
 
 ---
 
@@ -580,10 +610,11 @@ php artisan make:seeder ProductSeeder
 - ✅ Service classes (4 services)
 - ✅ Relationships and business logic
 
-### Phase 2: Data Generation
-- ⏳ Factories for all models
-- ⏳ Seeders with realistic data
-- ⏳ Test data generation
+### Phase 2: Data Generation (COMPLETED ✅)
+- ✅ Factories for all models (27 factories)
+- ✅ Seeders with realistic data (10 seeders)
+- ✅ DatabaseSeeder with proper order
+- ✅ Demo data for local/staging environments
 
 ### Phase 3: API Development (COMPLETED ✅)
 - ✅ API controllers with Spatie Query Builder
@@ -599,22 +630,53 @@ php artisan make:seeder ProductSeeder
 - ✅ Wishlist API (index, toggle)
 - ✅ API Resources for JSON transformation
 
-### Phase 4: Admin Panel (IN PROGRESS)
+### Phase 4: Admin Panel (COMPLETED ✅)
 - ✅ Laravel Filament 5 installed
 - ✅ Admin panel provider configured
-- ✅ Filament resources created:
-  - ProductResource (with soft deletes)
-  - CategoryResource (with soft deletes)
-  - OrderResource (with soft deletes)
-  - UserResource
-  - CouponResource
-  - ReviewResource
-  - DeliveryZoneResource
+- ✅ Filament resources created (Product, Category, Order, User, Coupon, Review, DeliveryZone)
 - ✅ Tables customized with proper columns, filters, badges
 - ✅ Forms organized with sections
-- ⏳ Relation managers for translations/variants/images
-- ⏳ Custom dashboard widgets
-- ⏳ Custom admin pages
+
+### Phase 4.5: API Production Hardening (COMPLETED ✅)
+
+**Rate Limiting** (via `RateLimitServiceProvider`):
+- ✅ `auth` - 5 requests/min (brute force protection)
+- ✅ `public` - 60 requests/min (product browsing)
+- ✅ `protected` - 30 requests/min (authenticated user actions)
+- ✅ `transactional` - 10 requests/min (orders, payments)
+
+**Authorization Policies** (in `app/Policies/`):
+- ✅ `OrderPolicy` - view/cancel (owner only), updateStatus (admin)
+- ✅ `AddressPolicy` - CRUD (owner only), delete blocked for default address
+- ✅ `ReviewPolicy` - delete (owner), markHelpful (not own review)
+- ✅ `CartItemPolicy` - update/delete (owner only)
+- ✅ `WishlistPolicy` - basic auth checks
+
+**API Versioning:**
+- ✅ Routes at `/api/v1/*` structure
+- ✅ Legacy `/api/*` redirects to v1 (301) for backward compatibility
+- ✅ Controllers in `Api/V1/` namespace
+
+**Security:**
+- ✅ Token expiration: 7 days
+- ✅ Token prefix: `easybake_` (for leak detection)
+- ✅ Standardized API responses with `ApiResponse` trait
+- ✅ `X-API-Version` header on all responses
+
+**Key Concepts Implemented:**
+
+1. **AuthorizesRequests Trait** (in base Controller):
+   - Provides `$this->authorize('action', $model)` method
+   - Auto-maps models to policies (Order → OrderPolicy)
+   - Throws 403 if policy returns false
+   - Replaces manual `if ($model->user_id !== Auth::id())` checks
+
+2. **ApiResponse Trait** (in controllers):
+   - `success($data, $message, $code)` - Standard success response
+   - `created($data, $message)` - 201 response
+   - `error($message, $code, $errors)` - Error response
+   - `paginated($paginator, $resourceClass)` - Paginated response with meta/links
+   - Ensures consistent JSON structure across all endpoints
 
 ### Phase 5: Frontend (Next.js)
 - ⏳ Next.js 15 setup
@@ -711,4 +773,4 @@ php artisan tinker
 ---
 
 **Last Updated**: January 2026
-**Project Status**: Filament Admin Panel Setup Complete - Resources Created & Customized
+**Project Status**: API Production Hardening Complete - Ready for Frontend (Next.js 15)

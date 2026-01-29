@@ -6,7 +6,8 @@
       "Bash(findstr:*)",
       "Bash(php artisan:*)",
       "WebFetch(domain:filamentphp.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(herd php artisan:*)"
     ]
   }
 }
