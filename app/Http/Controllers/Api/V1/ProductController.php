@@ -30,14 +30,24 @@ final class ProductController extends Controller
     public function index(): AnonymousResourceCollection
     {
         $products = QueryBuilder::for(Product::class)
-            ->where('is_available', true)
             ->whereNull('deleted_at')
             ->with('translations')
             ->allowedFilters([
                 AllowedFilter::exact('category_id'),
-                AllowedFilter::exact('is_featured'),
+                AllowedFilter::callback('is_featured', function ($query, $value) {
+                    $query->where('is_featured', filter_var($value, FILTER_VALIDATE_BOOLEAN));
+                }),
+                AllowedFilter::callback('is_available', function ($query, $value) {
+                    $query->where('is_available', filter_var($value, FILTER_VALIDATE_BOOLEAN));
+                }),
                 AllowedFilter::exact('sku'),
                 AllowedFilter::operator('price', FilterOperator::DYNAMIC),
+                AllowedFilter::callback('min_price', function ($query, $value) {
+                    $query->where('price', '>=', $value);
+                }),
+                AllowedFilter::callback('max_price', function ($query, $value) {
+                    $query->where('price', '<=', $value);
+                }),
                 AllowedFilter::partial('sku_search', 'sku'),
                 AllowedFilter::callback('search', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
@@ -51,9 +61,15 @@ final class ProductController extends Controller
             ])
             ->allowedSorts([
                 'price',
+                '-price',
                 'created_at',
+                '-created_at',
                 'sales_count',
+                '-sales_count',
                 'views_count',
+                '-views_count',
+                'is_featured',
+                '-is_featured',
                 AllowedSort::field('newest', 'created_at'),
                 AllowedSort::field('bestselling', 'sales_count'),
             ])->defaultSort('-created_at')

@@ -10,9 +10,20 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final readonly  class CartService
 {
+    /**
+     * Generate cryptographically secure cart token
+     * 256-bit entropy (Copenhagen Book recommendation: 120-256 bits)
+     * 64 chars = 384 bits in base62 encoding
+     */
+    private function generateSecureCartToken(): string
+    {
+        return Str::random(64);
+    }
+
     public function getOrCreateCart(?User $user, ?string $sessionId): Cart
     {
         if ($user) {
@@ -21,6 +32,12 @@ final readonly  class CartService
                 ['expires_at' => now()->addDays(30)]
             );
         }
+
+        // Generate secure server-side token if none provided
+        if (!$sessionId) {
+            $sessionId = $this->generateSecureCartToken();
+        }
+
         return Cart::firstOrCreate(
             ['session_id' => $sessionId],
             ['expires_at' => now()->addDays(7)]
@@ -35,17 +52,23 @@ final readonly  class CartService
     ): CartItem
     {
         $price = $variant ? $variant->price : $product->price;
-        return CartItem::updateOrCreate(
-            [
-                'cart_id' => $cart->id,
-                'product_id' => $product->id,
-                'product_variant_id' => $variant?->id,
-            ],
-            [
-                'quantity' => DB::raw("quantity + {$quantity}"),
-                'price' => $price,
-            ]
-        );
+
+        $cartItem = CartItem::firstOrNew([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'product_variant_id' => $variant?->id,
+        ]);
+
+        if ($cartItem->exists) {
+            $cartItem->quantity += $quantity;
+        } else {
+            $cartItem->quantity = $quantity;
+        }
+
+        $cartItem->price = $price;
+        $cartItem->save();
+
+        return $cartItem;
     }
 
     public function updateQuantity(CartItem $item, int $quantity): bool

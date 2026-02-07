@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Auth\AuthController;

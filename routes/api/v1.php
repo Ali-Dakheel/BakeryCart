@@ -45,15 +45,15 @@ Route::middleware('throttle:public')->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum', 'throttle:protected'])->group(function () {
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'show']);
-        Route::post('items', [CartController::class, 'addItem']);
-        Route::patch('items/{cartItem}', [CartController::class, 'updateItem']);
-        Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
-        Route::delete('/', [CartController::class, 'clear']);
-    });
+Route::prefix('cart')->middleware('throttle:protected')->group(function () {
+    Route::get('/', [CartController::class, 'show']);
+    Route::post('items', [CartController::class, 'addItem']);
+    Route::patch('items/{cartItem}', [CartController::class, 'updateItem']);
+    Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
+    Route::delete('/', [CartController::class, 'clear']);
+});
 
+Route::middleware(['auth:sanctum', 'throttle:protected'])->group(function () {
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
         Route::get('{order}', [OrderController::class, 'show']);

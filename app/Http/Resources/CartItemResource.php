@@ -15,12 +15,21 @@ final class CartItemResource extends JsonResource
         $productTranslation = $this->product->translations->where('locale', $locale)->first();
         return [
             'id' => $this->id,
+            'cart_id' => $this->cart_id,
             'product_id' => $this->product_id,
+            'product_variant_id' => $this->product_variant_id,
             'product' => [
                 'id' => $this->product->id,
                 'sku' => $this->product->sku,
                 'name' => $productTranslation?->name ?? 'Unnamed Product',
-                'image' => $this->product->images->where('is_primary', true)->first()?->image_url,
+                'images' => $this->product->images->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->image_url,
+                        'image_path' => $image->image_url,
+                        'is_primary' => $image->is_primary,
+                    ];
+                })->values(),
             ],
             'variant' => $this->when($this->variant, function () use ($locale) {
                 return [
@@ -30,8 +39,10 @@ final class CartItemResource extends JsonResource
                 ];
             }),
             'quantity' => $this->quantity,
-            'price' => (float)$this->price,
+            'price_snapshot' => (float)$this->price,
             'subtotal' => (float)$this->subtotal,
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

@@ -29,7 +29,8 @@ final class CartController extends Controller
     public function show(): JsonResponse
     {
         $user = Auth::user();
-        $cart = $this->cartService->getOrCreateCart($user, null);
+        $cartToken = $user ? null : request()->header('X-Cart-Token');
+        $cart = $this->cartService->getOrCreateCart($user, $cartToken);
 
         $totals = $this->cartService->calculateTotals($cart);
 
@@ -38,6 +39,7 @@ final class CartController extends Controller
 
         return $this->success([
             'cart' => new CartResource($cart),
+            'cart_token' => $user ? null : $cart->session_id, // Server token for guests only
         ]);
     }
 
@@ -45,7 +47,8 @@ final class CartController extends Controller
     {
         $validated = $request->validated();
         $user = Auth::user();
-        $cart = $this->cartService->getOrCreateCart($user, null);
+        $cartToken = $user ? null : request()->header('X-Cart-Token');
+        $cart = $this->cartService->getOrCreateCart($user, $cartToken);
         $product = Product::findOrFail($validated['product_id']);
 
         $variant = isset($validated['product_variant_id'])
@@ -57,12 +60,18 @@ final class CartController extends Controller
 
         return $this->created([
             'item' => new CartItemResource($cartItem),
+            'cart_token' => $user ? null : $cart->session_id, // Server token for guests only
         ], 'Item added to cart');
     }
 
     public function updateItem(UpdateItemRequest $request, CartItem $cartItem): JsonResponse
     {
-        $this->authorize('update', $cartItem);
+        $user = Auth::user();
+        $cartToken = $user ? null : request()->header('X-Cart-Token');
+
+        if (!$this->canAccessCartItem($cartItem, $user, $cartToken)) {
+            abort(403, 'Unauthorized');
+        }
 
         $validated = $request->validated();
         $this->cartService->updateQuantity($cartItem, $validated['quantity']);
@@ -76,7 +85,12 @@ final class CartController extends Controller
 
     public function removeItem(CartItem $cartItem): JsonResponse
     {
-        $this->authorize('delete', $cartItem);
+        $user = Auth::user();
+        $cartToken = $user ? null : request()->header('X-Cart-Token');
+
+        if (!$this->canAccessCartItem($cartItem, $user, $cartToken)) {
+            abort(403, 'Unauthorized');
+        }
 
         $this->cartService->removeItem($cartItem);
 
@@ -86,9 +100,25 @@ final class CartController extends Controller
     public function clear(): JsonResponse
     {
         $user = Auth::user();
-        $cart = $this->cartService->getOrCreateCart($user, null);
+        $cartToken = $user ? null : request()->header('X-Cart-Token');
+        $cart = $this->cartService->getOrCreateCart($user, $cartToken);
         $this->cartService->clearCart($cart);
 
         return $this->success(null, 'Cart cleared', 204);
+    }
+
+    private function canAccessCartItem(CartItem $cartItem, $user, ?string $cartToken): bool
+    {
+        $cart = $cartItem->cart;
+
+        if ($user && $cart->user_id === $user->id) {
+            return true;
+        }
+
+        if (!$user && $cart->session_id === $cartToken) {
+            return true;
+        }
+
+        return false;
     }
 }
