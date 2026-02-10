@@ -15,12 +15,9 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,app.easybake.test:3000',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1'
+    )),
 
     /*
     |--------------------------------------------------------------------------
@@ -45,9 +42,11 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | Recommended: 240 (4 hours) for web, 1440 (24 hours) for mobile apps
+    |
     */
 
-    'expiration' => 60 * 24 * 7, // 7 days
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 60 * 4), // 4 hours (240 minutes)
 
     /*
     |--------------------------------------------------------------------------

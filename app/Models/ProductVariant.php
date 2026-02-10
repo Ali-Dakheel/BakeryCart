@@ -77,4 +77,41 @@ final class ProductVariant extends Model
     {
         return $query->where('stock', '>', 0);
     }
+
+    /**
+     * Decrement stock quantity for this variant
+     * Respects parent product's track_inventory setting
+     *
+     * @param int $quantity Amount to decrement
+     * @return bool
+     * @throws \Exception If insufficient stock
+     */
+    public function decrementStock(int $quantity): bool
+    {
+        if (!$this->product->track_inventory) {
+            return true;
+        }
+
+        if ($this->stock < $quantity) {
+            throw new \Exception('Insufficient stock for variant');
+        }
+
+        return $this->decrement('stock', $quantity);
+    }
+
+    /**
+     * Increment stock quantity for this variant
+     * Respects parent product's track_inventory setting
+     *
+     * @param int $quantity Amount to increment
+     * @return void
+     */
+    public function incrementStock(int $quantity): void
+    {
+        if (!$this->product->track_inventory) {
+            return;
+        }
+
+        $this->increment('stock', $quantity);
+    }
 }

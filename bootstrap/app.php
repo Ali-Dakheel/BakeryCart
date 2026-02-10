@@ -25,10 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.version' => \App\Http\Middleware\ApiVersionHeader::class,
         ]);
 
-        // Enable CORS for API routes
-        $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
-        ]);
+        // Enable Sanctum stateful API authentication (Laravel 12 way)
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

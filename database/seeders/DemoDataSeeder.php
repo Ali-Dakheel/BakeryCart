@@ -153,6 +153,15 @@ final class DemoDataSeeder extends Seeder
 
                     // Review 1-2 products from the order
                     foreach ($orderItems->take(fake()->numberBetween(1, 2)) as $item) {
+                        // Skip if user already reviewed this product
+                        $existingReview = Review::where('user_id', $customer->id)
+                            ->where('product_id', $item->product_id)
+                            ->exists();
+
+                        if ($existingReview) {
+                            continue;
+                        }
+
                         Review::create([
                             'product_id' => $item->product_id,
                             'user_id' => $customer->id,

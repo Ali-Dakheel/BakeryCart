@@ -11,7 +11,8 @@ final class CategoryResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $locale = $request->header('Accept-Language', 'en');
+        // Normalize locale: "en-US" -> "en", "ar-SA" -> "ar"
+        $locale = substr($request->header('Accept-Language', 'en'), 0, 2);
         $translation = $this->translations->where('locale', $locale)->first()
             ?? $this->translations->where('locale', 'en')->first();
         return [

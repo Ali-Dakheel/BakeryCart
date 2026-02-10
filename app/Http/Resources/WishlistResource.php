@@ -11,9 +11,10 @@ final class WishlistResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $locale = $request->header('Accept-Language', 'en');
-        $productTranslations = $this->products
-        ->translations->where('locale', $locale)->first();
+        // Normalize locale: "en-US" -> "en", "ar-SA" -> "ar"
+        $locale = substr($request->header('Accept-Language', 'en'), 0, 2);
+        $productTranslation = $this->product
+            ->translations->where('locale', $locale)->first();
         return [
             'id' => $this->id,
             'product' => [

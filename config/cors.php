@@ -17,21 +17,29 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    // Only allow standard HTTP methods (no TRACE, CONNECT, etc.)
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://app.easybake.test:3000',
-    ],
+    // Allowed origins - use env variable for production
+    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001'))),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    // Only allow necessary headers
+    'allowed_headers' => [
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'X-Requested-With',
+        'X-CSRF-TOKEN',
+        'X-XSRF-TOKEN',
+        'Accept-Language',
+    ],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // Cache preflight requests for 1 hour
+    'max_age' => 3600,
 
     'supports_credentials' => true,
 

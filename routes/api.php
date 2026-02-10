@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AddressController;
-use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WishlistController;
-use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -43,15 +43,16 @@ Route::prefix('products/{product}/reviews')->group(function () {
     });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+// Cart routes - accessible to both guests and authenticated users
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'show']);
+    Route::post('items', [CartController::class, 'addItem']);
+    Route::patch('items/{cartItem}', [CartController::class, 'updateItem']);
+    Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
+    Route::delete('/', [CartController::class, 'clear']);
+});
 
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'show']);
-        Route::post('items', [CartController::class, 'addItem']);
-        Route::patch('items/{cartItem}', [CartController::class, 'updateItem']);
-        Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
-        Route::delete('/', [CartController::class, 'clear']);
-    });
+Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);

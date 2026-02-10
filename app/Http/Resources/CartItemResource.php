@@ -11,7 +11,9 @@ final class CartItemResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Normalize locale: "en-US" -> "en", "ar-SA" -> "ar"
         $locale = $request->header('Accept-Language', 'en');
+        $locale = substr($locale, 0, 2); // Get first 2 characters
         $productTranslation = $this->product->translations->where('locale', $locale)->first();
         return [
             'id' => $this->id,

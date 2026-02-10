@@ -10,7 +10,6 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Traits\ApiResponse;
-use App\Models\Cart;
 use App\Models\User;
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
@@ -40,16 +39,32 @@ final class AuthController extends Controller
         // Log user in (sets session cookie - secure, HttpOnly)
         Auth::login($user);
 
-        // Merge guest cart if exists
-        $guestCartToken = $request->header('X-Cart-Token');
-        if ($guestCartToken) {
-            $this->mergeGuestCartOnAuth($user, $guestCartToken);
+        // Trigger cart merging and get the merged cart
+        $cartToken = request()->cookie('cart_token');
+        $cart = $this->cartService->getOrCreateCart($user, $cartToken);
+
+        $response = response()->json([
+            'success' => true,
+            'data' => ['user' => new UserResource($user)],
+            'message' => 'Registration successful',
+        ], 201);
+
+        // Update cart token cookie if needed (cart may have new session_id after merge)
+        if ($cart->session_id && $cart->session_id !== $cartToken) {
+            $response->cookie(
+                'cart_token',
+                $cart->session_id,
+                43200, // 30 days
+                '/',
+                config('session.domain'),
+                config('session.secure'),
+                true, // httpOnly
+                false,
+                config('session.same_site')
+            );
         }
 
-        return $this->created([
-            'user' => new UserResource($user),
-            'cart_token' => null, // Session-based, no token needed
-        ], 'Registration successful');
+        return $response;
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -61,16 +76,34 @@ final class AuthController extends Controller
             return $this->error('Invalid credentials', 401);
         }
 
-        // Merge guest cart if exists
-        $guestCartToken = $request->header('X-Cart-Token');
-        if ($guestCartToken) {
-            $this->mergeGuestCartOnAuth(Auth::user(), $guestCartToken);
+        $user = Auth::user();
+
+        // Trigger cart merging and get the merged cart
+        $cartToken = request()->cookie('cart_token');
+        $cart = $this->cartService->getOrCreateCart($user, $cartToken);
+
+        $response = response()->json([
+            'success' => true,
+            'data' => ['user' => new UserResource($user)],
+            'message' => 'Login successful',
+        ]);
+
+        // Update cart token cookie if needed (cart may have new session_id after merge)
+        if ($cart->session_id && $cart->session_id !== $cartToken) {
+            $response->cookie(
+                'cart_token',
+                $cart->session_id,
+                43200, // 30 days
+                '/',
+                config('session.domain'),
+                config('session.secure'),
+                true, // httpOnly
+                false,
+                config('session.same_site')
+            );
         }
 
-        return $this->success([
-            'user' => new UserResource(Auth::user()),
-            'cart_token' => null, // Session-based, no token needed
-        ], 'Login successful');
+        return $response;
     }
 
     public function logout(): JsonResponse
@@ -113,16 +146,4 @@ final class AuthController extends Controller
         return $this->success(null, 'Password changed successfully. Other devices have been logged out.');
     }
 
-    /**
-     * Merge guest cart into user cart after authentication
-     */
-    private function mergeGuestCartOnAuth(User $user, string $guestCartToken): void
-    {
-        $guestCart = Cart::where('session_id', $guestCartToken)->first();
-
-        if ($guestCart && $guestCart->items()->count() > 0) {
-            $userCart = $this->cartService->getOrCreateCart($user, null);
-            $this->cartService->mergeGuestCart($guestCart, $userCart);
-        }
-    }
 }
