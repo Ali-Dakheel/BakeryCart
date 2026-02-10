@@ -23,6 +23,17 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Admin routes - requires authentication and admin role
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin'])
+    ->group(function () {
+        // Product management
+        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+
+        // Category management
+        Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
+    });
+
 Route::prefix('products')->group(function () {
     Route::get('featured', [ProductController::class, 'featured']);
     Route::get('popular', [ProductController::class, 'popular']);

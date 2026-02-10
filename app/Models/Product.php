@@ -206,4 +206,7 @@ final class Product extends Model
     {
         return $this->approvedReviews()->count();
     }
+
+    // Note: Products use ID for route model binding (default)
+    // Categories use slug for better URLs (see Category model)
 }

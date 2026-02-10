@@ -43,11 +43,10 @@ final class AuthController extends Controller
         $cartToken = request()->cookie('cart_token');
         $cart = $this->cartService->getOrCreateCart($user, $cartToken);
 
-        $response = response()->json([
-            'success' => true,
-            'data' => ['user' => new UserResource($user)],
-            'message' => 'Registration successful',
-        ], 201);
+        $response = $this->created(
+            ['user' => new UserResource($user)],
+            'Registration successful'
+        );
 
         // Update cart token cookie if needed (cart may have new session_id after merge)
         if ($cart->session_id && $cart->session_id !== $cartToken) {
@@ -82,11 +81,10 @@ final class AuthController extends Controller
         $cartToken = request()->cookie('cart_token');
         $cart = $this->cartService->getOrCreateCart($user, $cartToken);
 
-        $response = response()->json([
-            'success' => true,
-            'data' => ['user' => new UserResource($user)],
-            'message' => 'Login successful',
-        ]);
+        $response = $this->success(
+            ['user' => new UserResource($user)],
+            'Login successful'
+        );
 
         // Update cart token cookie if needed (cart may have new session_id after merge)
         if ($cart->session_id && $cart->session_id !== $cartToken) {

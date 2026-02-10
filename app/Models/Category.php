@@ -87,4 +87,13 @@ final class Category extends Model
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
+    /**
+     * Get the route key name for Laravel route model binding.
+     * This tells Laravel to look up categories by slug instead of ID.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
 }
