@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Models\Address;
@@ -12,24 +14,16 @@ use App\Policies\CartItemPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\ReviewPolicy;
 use App\Policies\WishlistPolicy;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+final class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
+        Model::shouldBeStrict(! app()->isProduction());
+
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(Address::class, AddressPolicy::class);
         Gate::policy(Review::class, ReviewPolicy::class);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,7 @@ final class Coupon extends Model
         'applicable_ids',
     ];
 
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
@@ -51,21 +53,21 @@ final class Coupon extends Model
         return $this->hasMany(CouponUsage::class);
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeValid($query)
+    public function scopeValid(Builder $query): Builder
     {
         $now = now();
 
         return $query->where('is_active', true)
-            ->where(function ($q) use ($now) {
+            ->where(function (Builder $q) use ($now): void {
                 $q->whereNull('valid_from')
                     ->orWhere('valid_from', '<=', $now);
             })
-            ->where(function ($q) use ($now) {
+            ->where(function (Builder $q) use ($now): void {
                 $q->whereNull('valid_to')
                     ->orWhere('valid_to', '>=', $now);
             });

@@ -28,13 +28,13 @@ final class BusinessHour extends Model
         ];
     }
 
-
-    public function isOpen(int $dayOfWeek, string $time): bool
+    public static function isOpenAt(int $dayOfWeek, string $time): bool
     {
-        $hours = static::where('day_of_week', $dayOfWeek)->first();
-        if(!$hours || $hours->is_closed) {
+        $hours = self::where('day_of_week', $dayOfWeek)->first();
+        if (! $hours || $hours->is_closed) {
             return false;
         }
+
         return $time >= $hours->opening_time && $time <= $hours->closing_time;
     }
 
@@ -44,12 +44,10 @@ final class BusinessHour extends Model
         $dayOfWeek = $now->dayOfWeek;
         $time = $now->format('H:i');
 
-        // Check special closures first
         if (SpecialClosure::isClosedToday()) {
             return false;
         }
 
-        return static::isOpenAt($dayOfWeek, $time);
+        return self::isOpenAt($dayOfWeek, $time);
     }
-
 }

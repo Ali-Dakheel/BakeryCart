@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,57 +39,43 @@ final class ProductVariant extends Model
             'sort_order' => 'integer',
         ];
     }
-    /**
-     * Get the product that owns this variant
-     *
-     * @return BelongsTo<Product>
-     */
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    /** @return HasMany<CartItem> */
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
     }
 
-    /** @return BelongsTo<OrderItem> */
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    /**
-     * Check if variant is in stock
-     *
-     * @return bool
-     */
     public function getInStockAttribute(): bool
     {
         return $this->stock > 0;
     }
-    public function scopeAvailable($query)
+
+    public function scopeAvailable(Builder $query): Builder
     {
         return $query->where('is_available', true);
     }
-    public function scopeInStock($query)
+
+    public function scopeInStock(Builder $query): Builder
     {
         return $query->where('stock', '>', 0);
     }
 
     /**
-     * Decrement stock quantity for this variant
-     * Respects parent product's track_inventory setting
-     *
-     * @param int $quantity Amount to decrement
-     * @return bool
      * @throws \Exception If insufficient stock
      */
     public function decrementStock(int $quantity): bool
     {
-        if (!$this->product->track_inventory) {
+        if (! $this->product->track_inventory) {
             return true;
         }
 
@@ -99,16 +86,9 @@ final class ProductVariant extends Model
         return $this->decrement('stock', $quantity);
     }
 
-    /**
-     * Increment stock quantity for this variant
-     * Respects parent product's track_inventory setting
-     *
-     * @param int $quantity Amount to increment
-     * @return void
-     */
     public function incrementStock(int $quantity): void
     {
-        if (!$this->product->track_inventory) {
+        if (! $this->product->track_inventory) {
             return;
         }
 

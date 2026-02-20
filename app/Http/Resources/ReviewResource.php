@@ -16,12 +16,12 @@ final class ReviewResource extends JsonResource
             'rating' => $this->rating,
             'title' => $this->title,
             'comment' => $this->comment,
-            'is_verified_purchase' => (bool)$this->is_verified_purchase,
+            'is_verified_purchase' => (bool) $this->is_verified_purchase,
             'helpful_count' => $this->helpful_count,
-            'user' => [
+            'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-            ],
+            ]),
             'admin_response' => $this->admin_response,
             'responded_at' => $this->responded_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),

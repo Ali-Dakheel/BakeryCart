@@ -1,18 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SpecialClosure extends Model
+final class SpecialClosure extends Model
 {
     use HasFactory;
 
     /** @var array<int, string> */
     protected $fillable = [
         'date',
-        'reason'
+        'reason',
     ];
 
     /** @return array<string, string> */
@@ -23,17 +26,17 @@ class SpecialClosure extends Model
         ];
     }
 
-    public static function isClosedOn($date): bool
+    public static function isClosedOn(mixed $date): bool
     {
-        return static::whereDate('date', $date)->exists();
+        return self::whereDate('date', $date)->exists();
     }
 
     public static function isClosedToday(): bool
     {
-        return static::isClosedOn(today('Asia/Bahrain'));
+        return self::isClosedOn(today('Asia/Bahrain'));
     }
 
-    public function scopeUpcoming($query)
+    public function scopeUpcoming(Builder $query): Builder
     {
         return $query->where('date', '>=', today('Asia/Bahrain'))
             ->orderBy('date');

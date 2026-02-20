@@ -20,7 +20,7 @@ final class Cart extends Model
         'expires_at',
     ];
 
-    /** @return \DateTime */
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
@@ -39,5 +39,4 @@ final class Cart extends Model
     {
         return $this->hasMany(CartItem::class);
     }
-
 }

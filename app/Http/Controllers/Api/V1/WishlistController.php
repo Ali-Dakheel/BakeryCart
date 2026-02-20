@@ -18,7 +18,7 @@ final class WishlistController extends Controller
 
     public function index(): JsonResponse
     {
-        $wishlist = Auth::user()->wishlist()
+        $wishlist = Auth::user()->wishlists()
             ->with(['product.translations', 'product.images'])
             ->orderByDesc('created_at')
             ->get();

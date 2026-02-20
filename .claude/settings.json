@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/Ali-d/.config/herd/bin/php.bat vendor/bin/pint --dirty --format agent)",
+      "Bash(/c/Users/Ali-d/AppData/Roaming/herd-lite/bin/php.bat /d/Ali-d/Herd/easybake/artisan test --compact)",
+      "Bash(\"/c/Users/Ali-d/.config/herd/bin/php84/php.exe\" /d/Ali-d/Herd/easybake/artisan test --compact)"
+    ]
+  }
+}

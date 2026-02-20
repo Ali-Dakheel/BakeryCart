@@ -13,19 +13,22 @@ final class CategoryResource extends JsonResource
     {
         // Normalize locale: "en-US" -> "en", "ar-SA" -> "ar"
         $locale = substr($request->header('Accept-Language', 'en'), 0, 2);
-        $translation = $this->translations->where('locale', $locale)->first()
-            ?? $this->translations->where('locale', 'en')->first();
+        $translation = $this->whenLoaded('translations', fn () => $this->translations->where('locale', $locale)->first()
+            ?? $this->translations->where('locale', 'en')->first());
+
         return [
             'id' => $this->id,
             'slug' => $this->slug,
             'name' => $translation?->name ?? 'Unnamed Category',
             'description' => $translation?->description,
             'icon' => $this->icon,
-            'is_active' => (bool)$this->is_active,
+            'is_active' => (bool) $this->is_active,
             'sort_order' => $this->sort_order,
             'parent' => $this->whenLoaded('parent', function () use ($locale) {
-                $parentTranslation = $this->parent->translations
-                    ->where('locale', $locale)->first();
+                $parentTranslation = $this->parent->relationLoaded('translations')
+                    ? $this->parent->translations->where('locale', $locale)->first()
+                    : null;
+
                 return [
                     'id' => $this->parent->id,
                     'slug' => $this->parent->slug,
@@ -37,8 +40,10 @@ final class CategoryResource extends JsonResource
                     ->where('is_active', true)
                     ->sortBy('sort_order')
                     ->map(function ($child) use ($locale) {
-                        $childTranslation = $child->translations
-                            ->where('locale', $locale)->first();
+                        $childTranslation = $child->relationLoaded('translations')
+                            ? $child->translations->where('locale', $locale)->first()
+                            : null;
+
                         return [
                             'id' => $child->id,
                             'slug' => $child->slug,
@@ -54,7 +59,6 @@ final class CategoryResource extends JsonResource
                 $this->relationLoaded('products'),
                 fn () => $this->products->count()
             ),
-
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

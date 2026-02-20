@@ -1,22 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use function PHPUnit\Framework\isArray;
 
-class Setting extends Model
+final class Setting extends Model
 {
     use HasFactory;
+
     /** @var string */
     protected $primaryKey = 'key';
+
     /** @var string */
     protected $keyType = 'string';
+
     /** @var bool */
     public $incrementing = false;
+
     /** @var bool */
     public const UPDATED_AT = 'updated_at';
+
     /** @var bool */
     public const CREATED_AT = null;
 
@@ -29,6 +36,7 @@ class Setting extends Model
         'is_public',
         'description',
     ];
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -37,18 +45,19 @@ class Setting extends Model
         ];
     }
 
-    public static function get(string $key, $default = null)
+    public static function get(string $key, mixed $default = null): mixed
     {
-        $setting = static::find($key);
-        if (!$setting) {
+        $setting = self::find($key);
+        if (! $setting) {
             return $default;
         }
-        return static::castValue($setting->value, $setting->type);
+
+        return self::castValue($setting->value, $setting->type);
     }
 
-    public static function set(string $key, $value, string $type = 'string'): bool
+    public static function set(string $key, mixed $value, string $type = 'string'): bool
     {
-        return static::updateOrCreate(
+        return self::updateOrCreate(
             ['key' => $key],
             [
                 'value' => is_array($value) ? json_encode($value) : $value,
@@ -57,20 +66,22 @@ class Setting extends Model
         )->exists();
     }
 
-    protected static function castValue($value, string $type)
+    protected static function castValue(mixed $value, string $type): mixed
     {
-        return match($type) {
+        return match ($type) {
             'integer' => (int) $value,
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
             'json' => json_decode($value, true),
             default => $value,
         };
     }
-    public function scopePublic($query)
+
+    public function scopePublic(Builder $query): Builder
     {
         return $query->where('is_public', true);
     }
-    public function scopeGroup($query, string $group)
+
+    public function scopeGroup(Builder $query, string $group): Builder
     {
         return $query->where('group', $group);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Category extends Model
 {
-    use SoftDeletes, HasFactory;
+    use HasFactory, SoftDeletes;
 
     /** @var array<int, string> */
     protected $fillable = [
@@ -24,76 +25,64 @@ final class Category extends Model
         'meta_title',
         'meta_description',
         'sort_order',
-        'is_active'
+        'is_active',
     ];
-    /** @return array<string, string> */
+
+    /** @var array<string, string> */
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
 
-
-    /** @return BelongsTo<Category> */
-    public function parent(): belongsTo
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    /** "@return HasMany<Category> */
     public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
     }
 
-    /** @return HasMany<CategoryTranslation> */
     public function translations(): HasMany
     {
         return $this->hasMany(CategoryTranslation::class, 'category_id');
     }
 
-    /** @return HasMany<Product> */
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'category_id');
     }
 
-    /** @param string $locale
-     * @return Model<CategoryTranslation|null>
-     */
     public function translate(string $locale = 'en'): ?CategoryTranslation
     {
         return $this->translations()->where('locale', $locale)->first();
     }
 
-    /** @return string|null */
     public function getNameAttribute(): ?string
     {
         $locale = app()->getLocale();
+
         return $this->translate($locale)?->name;
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeTopLevel($query)
+    public function scopeTopLevel(Builder $query): Builder
     {
         return $query->whereNull('parent_id');
     }
 
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
-    /**
-     * Get the route key name for Laravel route model binding.
-     * This tells Laravel to look up categories by slug instead of ID.
-     */
     public function getRouteKeyName(): string
     {
         return 'slug';
     }
-
 }

@@ -9,7 +9,6 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-
 final class ProductFactory extends Factory
 {
     protected $model = Product::class;
@@ -28,10 +27,11 @@ final class ProductFactory extends Factory
             'Cheese Danish',
             'Rye Bread',
         ]);
+
         return [
             'category_id' => Category::factory(),  // Creates category if needed
-            'sku' => 'PROD-' . fake()->unique()->numberBetween(1000, 9999),
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 1000),
+            'sku' => 'PROD-'.fake()->unique()->numberBetween(1000, 9999),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 1000),
             'price' => fake()->randomFloat(3, 0.250, 15.000),  // BHD
             'compare_at_price' => null,
             'cost' => fake()->randomFloat(3, 0.100, 10.000),
@@ -58,7 +58,7 @@ final class ProductFactory extends Factory
     public function outOfStock(): static
     {
         return $this->state(fn (array $attributes) => [
-            'stock_quantity' => 0,
+            'current_stock' => 0,
             'is_available' => false,
         ]);
     }
@@ -66,8 +66,8 @@ final class ProductFactory extends Factory
     public function onSale(): static
     {
         return $this->state(fn (array $attributes) => [
-            // Use $attributes['base_price'] from definition()
-            'sale_price' => round($attributes['base_price'] * 0.8, 3),  // 20% off
+            'compare_at_price' => $attributes['price'],
+            'price' => round($attributes['price'] * 0.8, 3),  // 20% off
         ]);
     }
 
@@ -89,7 +89,7 @@ final class ProductFactory extends Factory
     public function lowStock(): static
     {
         return $this->state(fn (array $attributes) => [
-            'stock_quantity' => fake()->numberBetween(1, 5),
+            'current_stock' => fake()->numberBetween(1, 5),
             'low_stock_threshold' => 10,
         ]);
     }
@@ -101,6 +101,7 @@ final class ProductFactory extends Factory
             'views_count' => fake()->numberBetween(2000, 10000),
         ]);
     }
+
     public function withTranslations(): static
     {
         return $this->afterCreating(function (Product $product) {
@@ -133,7 +134,7 @@ final class ProductFactory extends Factory
             for ($i = 0; $i < $count; $i++) {
                 $product->images()->create([
                     'image_url' => fake()->imageUrl(800, 600, 'food'),
-                    'alt_text' => "Product image " . ($i + 1),
+                    'alt_text' => 'Product image '.($i + 1),
                     'is_primary' => $i === 0,  // First image is primary
                     'sort_order' => $i,
                 ]);
@@ -144,31 +145,31 @@ final class ProductFactory extends Factory
     public function withVariants(): static
     {
         return $this->afterCreating(function (Product $product) {
-            $basePrice = (float) $product->base_price;
+            $basePrice = (float) $product->price;
 
             $product->variants()->createMany([
                 [
-                    'sku' => $product->sku . '-1PC',
+                    'sku' => $product->sku.'-1PC',
                     'name' => 'Single',
                     'pack_quantity' => 1,
                     'price' => $basePrice,
-                    'stock_quantity' => fake()->numberBetween(10, 50),
+                    'stock' => fake()->numberBetween(10, 50),
                     'is_available' => true,
                 ],
                 [
-                    'sku' => $product->sku . '-6PK',
+                    'sku' => $product->sku.'-6PK',
                     'name' => '6-Pack',
                     'pack_quantity' => 6,
                     'price' => round($basePrice * 5.5, 3),  // Slight discount
-                    'stock_quantity' => fake()->numberBetween(5, 20),
+                    'stock' => fake()->numberBetween(5, 20),
                     'is_available' => true,
                 ],
                 [
-                    'sku' => $product->sku . '-12PK',
+                    'sku' => $product->sku.'-12PK',
                     'name' => '12-Pack (Box)',
                     'pack_quantity' => 12,
                     'price' => round($basePrice * 10, 3),  // Better discount
-                    'stock_quantity' => fake()->numberBetween(2, 10),
+                    'stock' => fake()->numberBetween(2, 10),
                     'is_available' => true,
                 ],
             ]);
@@ -182,5 +183,4 @@ final class ProductFactory extends Factory
             ->withImages(3)
             ->withVariants();
     }
-
 }

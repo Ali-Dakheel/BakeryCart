@@ -36,13 +36,7 @@ Route::middleware('throttle:public')->group(function () {
         Route::get('{category}', [CategoryController::class, 'show']);
     });
 
-    Route::prefix('products/{product}/reviews')->group(function () {
-        Route::get('/', [ReviewController::class, 'index']);
-
-        Route::middleware(['auth:sanctum', 'throttle:protected'])->group(function () {
-            Route::post('/', [ReviewController::class, 'store']);
-        });
-    });
+    Route::get('products/{product}/reviews', [ReviewController::class, 'index']);
 });
 
 Route::prefix('cart')->middleware('throttle:protected')->group(function () {
@@ -76,6 +70,7 @@ Route::middleware(['auth:sanctum', 'throttle:protected'])->group(function () {
         });
     });
 
+    Route::post('products/{product}/reviews', [ReviewController::class, 'store']);
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
     Route::post('reviews/{review}/helpful', [ReviewController::class, 'markHelpful']);
 

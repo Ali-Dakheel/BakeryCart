@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Requests\Product;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,7 +21,7 @@ final class StoreProductRequest extends FormRequest
             'slug' => ['required', 'string', 'max:255', 'unique:products,slug'],
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
-            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'cost' => ['nullable', 'numeric', 'min:0'],
             'current_stock' => ['integer', 'min:0'],
             'low_stock_threshold' => ['integer', 'min:0'],
             'track_inventory' => ['boolean'],

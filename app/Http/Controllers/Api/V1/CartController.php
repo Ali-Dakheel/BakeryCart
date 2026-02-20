@@ -10,6 +10,7 @@ use App\Http\Requests\Cart\UpdateItemRequest;
 use App\Http\Resources\CartItemResource;
 use App\Http\Resources\CartResource;
 use App\Http\Traits\ApiResponse;
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -23,8 +24,7 @@ final class CartController extends Controller
 
     public function __construct(
         private readonly CartService $cartService
-    ) {
-    }
+    ) {}
 
     private function getCartTokenFromCookie(): ?string
     {
@@ -109,7 +109,7 @@ final class CartController extends Controller
         $user = Auth::user();
         $cartToken = $this->getCartTokenFromCookie();
 
-        if (!$this->canAccessCartItem($cartItem, $user, $cartToken)) {
+        if (! $this->canAccessCartItem($cartItem, $user, $cartToken)) {
             abort(403, 'Unauthorized');
         }
 
@@ -128,7 +128,7 @@ final class CartController extends Controller
         $user = Auth::user();
         $cartToken = $this->getCartTokenFromCookie();
 
-        if (!$this->canAccessCartItem($cartItem, $user, $cartToken)) {
+        if (! $this->canAccessCartItem($cartItem, $user, $cartToken)) {
             abort(403, 'Unauthorized');
         }
 
@@ -147,9 +147,13 @@ final class CartController extends Controller
         return $this->success(null, 'Cart cleared', 204);
     }
 
-    private function canAccessCartItem(CartItem $cartItem, $user, ?string $cartToken): bool
+    private function canAccessCartItem(CartItem $cartItem, mixed $user, ?string $cartToken): bool
     {
-        $cart = $cartItem->cart;
+        $cart = Cart::find($cartItem->cart_id);
+
+        if (! $cart) {
+            return false;
+        }
 
         // Authenticated users: verify user_id match
         if ($user) {

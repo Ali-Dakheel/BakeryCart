@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use InvalidArgumentException;
 
 final class Review extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /** @var array<int, string> */
     protected $fillable = [
         'product_id',
         'user_id',
@@ -28,6 +31,7 @@ final class Review extends Model
         'responded_at',
     ];
 
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
@@ -39,17 +43,16 @@ final class Review extends Model
         ];
     }
 
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        static::saving(function ($review) {
+        self::saving(function (self $review): void {
             if ($review->rating < 1 || $review->rating > 5) {
-                throw new \InvalidArgumentException('Rating must be between 1 and 5');
+                throw new InvalidArgumentException('Rating must be between 1 and 5');
             }
         });
     }
-
 
     public function product(): BelongsTo
     {
@@ -74,30 +77,30 @@ final class Review extends Model
 
     public function getHasAdminResponseAttribute(): bool
     {
-        return !is_null($this->admin_response);
+        return ! is_null($this->admin_response);
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved(Builder $query): Builder
     {
         return $query->where('is_approved', true);
     }
 
-    public function scopeVerified($query)
+    public function scopeVerified(Builder $query): Builder
     {
         return $query->where('is_verified_purchase', true);
     }
 
-    public function scopeByRating($query, int $rating)
+    public function scopeByRating(Builder $query, int $rating): Builder
     {
         return $query->where('rating', $rating);
     }
 
-    public function scopeRecent($query)
+    public function scopeRecent(Builder $query): Builder
     {
         return $query->orderBy('created_at', 'desc');
     }
 
-    public function scopeHelpful($query)
+    public function scopeHelpful(Builder $query): Builder
     {
         return $query->orderBy('helpful_count', 'desc');
     }

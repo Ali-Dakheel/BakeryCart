@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,6 @@ final class Order extends Model
     use HasFactory, SoftDeletes;
 
     /** @var array<string, mixed> */
-
     protected $fillable = [
         'order_number',
         'user_id',
@@ -60,6 +60,7 @@ final class Order extends Model
         'utm_campaign',
     ];
 
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
@@ -75,33 +76,27 @@ final class Order extends Model
         ];
     }
 
-    /** @return BelongsTo<User> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
-    /** @return BelongsTo<> */
 
     public function shippingAddress(): BelongsTo
     {
         return $this->belongsTo(Address::class, 'shipping_address_id');
     }
 
-    /** @return HasMany<OrderItem> */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    /** @return HasMany<OrderStatusHistory> */
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)
             ->orderBy('created_at', 'desc');
     }
 
-    /** @return HasOne<OrderCancellation> */
     public function cancellation(): HasOne
     {
         return $this->hasOne(OrderCancellation::class);
@@ -111,7 +106,6 @@ final class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
-
 
     public function getIsCancelableAttribute(): bool
     {
@@ -129,32 +123,32 @@ final class Order extends Model
         return $this->items->sum('quantity');
     }
 
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');
     }
 
-    public function scopeConfirmed($query)
+    public function scopeConfirmed(Builder $query): Builder
     {
         return $query->where('status', 'confirmed');
     }
 
-    public function scopeDelivered($query)
+    public function scopeDelivered(Builder $query): Builder
     {
         return $query->where('status', 'delivered');
     }
 
-    public function scopeCancelled($query)
+    public function scopeCancelled(Builder $query): Builder
     {
         return $query->where('status', 'cancelled');
     }
 
-    public function scopePaid($query)
+    public function scopePaid(Builder $query): Builder
     {
         return $query->where('payment_status', 'paid');
     }
 
-    public function scopeUnpaid($query)
+    public function scopeUnpaid(Builder $query): Builder
     {
         return $query->where('payment_status', 'pending');
     }

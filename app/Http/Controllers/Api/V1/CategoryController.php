@@ -66,7 +66,7 @@ final class CategoryController extends Controller
         unset($validated['translations']);
         $category = Category::create($validated);
         $category->translations()->createMany($translation);
-        $category->load(['translations', 'parent']);
+        $category->load(['translations', 'parent.translations']);
 
         return $this->created(['category' => new CategoryResource($category)], 'Category created successfully');
     }
@@ -85,7 +85,7 @@ final class CategoryController extends Controller
                 );
             }
         }
-        $category->load(['translations', 'parent', 'children']);
+        $category->load(['translations', 'parent.translations', 'children.translations']);
 
         return $this->success(['category' => new CategoryResource($category)], 'Category updated successfully');
     }

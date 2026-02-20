@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TaxRate extends Model
+final class TaxRate extends Model
 {
     use HasFactory;
 
@@ -34,44 +37,26 @@ class TaxRate extends Model
         ];
     }
 
-    /**
-     * Scope: Only active tax rates
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope: Currently effective tax rates
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeEffective($query)
+    public function scopeEffective(Builder $query): Builder
     {
         $now = now();
 
         return $query->where('is_active', true)
-            ->where(function ($q) use ($now) {
+            ->where(function (Builder $q) use ($now): void {
                 $q->whereNull('effective_from')
                     ->orWhere('effective_from', '<=', $now);
             })
-            ->where(function ($q) use ($now) {
+            ->where(function (Builder $q) use ($now): void {
                 $q->whereNull('effective_to')
                     ->orWhere('effective_to', '>=', $now);
             });
     }
 
-    /**
-     * Check if tax applies to specific product
-     *
-     * @param int $productId
-     * @return bool
-     */
     public function appliesToProduct(int $productId): bool
     {
         if ($this->applies_to === 'all') {
@@ -85,12 +70,6 @@ class TaxRate extends Model
         return false;
     }
 
-    /**
-     * Check if tax applies to specific category
-     *
-     * @param int $categoryId
-     * @return bool
-     */
     public function appliesToCategory(int $categoryId): bool
     {
         if ($this->applies_to === 'all') {

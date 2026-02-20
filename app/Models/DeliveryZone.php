@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,44 +33,22 @@ final class DeliveryZone extends Model
             'sort_order' => 'integer',
         ];
     }
-    /**
-     * Get areas in this delivery zone
-     *
-     * @return HasMany<DeliveryZoneArea>
-     */
+
     public function areas(): HasMany
     {
         return $this->hasMany(DeliveryZoneArea::class);
     }
 
-    /**
-     * Scope: Only active zones
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope: Order by sort_order
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
-    /**
-     * Calculate delivery fee for given cart total
-     *
-     * @param float $cartTotal
-     * @return float
-     */
     public function calculateFee(float $cartTotal): float
     {
         if ($this->free_delivery_threshold && $cartTotal >= $this->free_delivery_threshold) {
@@ -78,5 +57,4 @@ final class DeliveryZone extends Model
 
         return (float) $this->base_fee;
     }
-
 }

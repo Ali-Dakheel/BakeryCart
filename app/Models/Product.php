@@ -73,6 +73,7 @@ final class Product extends Model
             'sales_count' => 'integer',
         ];
     }
+
     /** @return BelongsTo<Model> */
     public function category(): BelongsTo
     {
@@ -98,11 +99,13 @@ final class Product extends Model
         return $this->hasMany(ProductVariant::class)
             ->orderBy('sort_order');
     }
+
     /** @return HasMany<Review> */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
+
     /** @return HasMany<CartItem> */
     public function cartItems(): HasMany
     {
@@ -127,15 +130,15 @@ final class Product extends Model
             ->orderBy('changed_at', 'desc');
     }
 
-
     /** Accessors */
     public function getIsOnSaleAttribute(): bool
     {
         return $this->compare_at_price && $this->compare_at_price > $this->price;
     }
+
     public function getDiscountPercentageAttribute(): ?float
     {
-        if (!$this->is_on_sale) {
+        if (! $this->is_on_sale) {
             return null;
         }
 
@@ -144,8 +147,9 @@ final class Product extends Model
 
     public function getInStockAttribute(): bool
     {
-        return !$this->track_inventory || $this->current_stock > 0;
+        return ! $this->track_inventory || $this->current_stock > 0;
     }
+
     public function getIsLowStockAttribute(): bool
     {
         return $this->track_inventory
@@ -156,29 +160,31 @@ final class Product extends Model
     public function getNameAttribute(): ?string
     {
         $locale = app()->getLocale();
+
         return $this->translations()
             ->where('locale', $locale)
             ->first()?->name;
     }
-    public function scopeAvailable($query)
+
+    public function scopeAvailable(Builder $query): Builder
     {
         return $query->where('is_available', true);
     }
 
-    public function scopeFeatured($query)
+    public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', true);
     }
 
-    public function scopeInStock($query)
+    public function scopeInStock(Builder $query): Builder
     {
-        return $query->where(function ($q) {
+        return $query->where(function (Builder $q): void {
             $q->where('track_inventory', false)
                 ->orWhere('current_stock', '>', 0);
         });
     }
 
-    public function scopePopular(Builder $query, $minSales = 10): Builder
+    public function scopePopular(Builder $query, int $minSales = 10): Builder
     {
         return $query->where('sales_count', '>=', (int) $minSales)
             ->orderBy('sales_count', 'desc');
