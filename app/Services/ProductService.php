@@ -100,7 +100,7 @@ final readonly class ProductService
 
     public function decrementStock(Product $product, int $quantity): bool
     {
-        if (!$product->track_inventory) {
+        if (! $product->track_inventory) {
             return true;
         }
 
@@ -109,6 +109,7 @@ final readonly class ProductService
         }
 
         $product->decrement('current_stock', $quantity);
+
         return true;
     }
 
@@ -121,11 +122,10 @@ final readonly class ProductService
 
     public function isAvailableForPurchase(Product $product, int $quantity = 1): bool
     {
-        if (!$product->is_available) {
+        if (! $product->is_available) {
             return false;
         }
 
-        // Check scheduling
         if ($product->available_from && $product->available_from->isFuture()) {
             return false;
         }
@@ -134,7 +134,6 @@ final readonly class ProductService
             return false;
         }
 
-        // Check stock
         if ($product->track_inventory && $product->current_stock < $quantity) {
             return false;
         }

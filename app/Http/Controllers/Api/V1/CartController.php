@@ -47,16 +47,15 @@ final class CartController extends Controller
             'data' => ['cart' => new CartResource($cart)],
         ]);
 
-        // Set/update cart token cookie if missing or mismatched
         if ($cart->session_id && $cart->session_id !== $cartToken) {
             $response->cookie(
                 'cart_token',
                 $cart->session_id,
-                43200, // 30 days in minutes
+                43200,
                 '/',
                 config('session.domain'),
                 config('session.secure'),
-                true, // httpOnly
+                true,
                 false,
                 config('session.same_site')
             );
@@ -86,16 +85,15 @@ final class CartController extends Controller
             'message' => 'Item added to cart',
         ], 201);
 
-        // Set/update cart token cookie if missing or mismatched
         if ($cart->session_id && $cart->session_id !== $cartToken) {
             $response->cookie(
                 'cart_token',
                 $cart->session_id,
-                43200, // 30 days in minutes
+                43200,
                 '/',
                 config('session.domain'),
                 config('session.secure'),
-                true, // httpOnly
+                true,
                 false,
                 config('session.same_site')
             );
@@ -155,12 +153,10 @@ final class CartController extends Controller
             return false;
         }
 
-        // Authenticated users: verify user_id match
         if ($user) {
             return $cart->user_id === $user->id;
         }
 
-        // Guest users: verify cart token match
         return $cartToken && $cart->session_id === $cartToken;
     }
 }

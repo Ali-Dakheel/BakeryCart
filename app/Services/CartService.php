@@ -12,7 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-final readonly  class CartService
+final readonly class CartService
 {
     /**
      * Generate cryptographically secure cart token
@@ -26,40 +26,27 @@ final readonly  class CartService
 
     public function getOrCreateCart(?User $user, ?string $cartToken): Cart
     {
-        $userCart = null;
-        $guestCart = null;
+        $userCart = $user ? Cart::where('user_id', $user->id)->first() : null;
+        $guestCart = $cartToken ? Cart::where('session_id', $cartToken)->whereNull('user_id')->first() : null;
 
-        // Find existing carts
-        if ($user) {
-            $userCart = Cart::where('user_id', $user->id)->first();
-        }
-
-        if ($cartToken) {
-            $guestCart = Cart::where('session_id', $cartToken)
-                            ->whereNull('user_id')
-                            ->first();
-        }
-
-        // Case 1: Both carts exist and are different → Merge
         if ($userCart && $guestCart && $userCart->id !== $guestCart->id) {
             $this->mergeGuestCart($guestCart, $userCart);
+
             return $userCart;
         }
 
-        // Case 2: Only user cart exists
         if ($userCart) {
             return $userCart;
         }
 
-        // Case 3: Only guest cart exists - associate with user if logged in
         if ($guestCart) {
             if ($user) {
                 $guestCart->update(['user_id' => $user->id]);
             }
+
             return $guestCart;
         }
 
-        // Case 4: No cart exists - create new
         return Cart::create([
             'user_id' => $user?->id,
             'session_id' => $cartToken ?? $this->generateSecureCartToken(),
@@ -68,12 +55,11 @@ final readonly  class CartService
     }
 
     public function addItem(
-        Cart            $cart,
-        Product         $product,
+        Cart $cart,
+        Product $product,
         ?ProductVariant $variant,
-        int             $quantity
-    ): CartItem
-    {
+        int $quantity
+    ): CartItem {
         $price = $variant ? $variant->price : $product->price;
 
         $cartItem = CartItem::firstOrNew([
@@ -126,6 +112,7 @@ final readonly  class CartService
             'items' => $items,
         ];
     }
+
     public function mergeGuestCart(Cart $guestCart, Cart $userCart): void
     {
         DB::transaction(function () use ($guestCart, $userCart) {
@@ -136,17 +123,14 @@ final readonly  class CartService
                     ->first();
 
                 if ($existingItem) {
-                    // Add quantities together for duplicates
                     $existingItem->update([
-                        'quantity' => $existingItem->quantity + $guestItem->quantity
+                        'quantity' => $existingItem->quantity + $guestItem->quantity,
                     ]);
                 } else {
-                    // Move item to user cart
                     $guestItem->update(['cart_id' => $userCart->id]);
                 }
             }
 
-            // Delete empty guest cart
             $guestCart->delete();
         });
     }

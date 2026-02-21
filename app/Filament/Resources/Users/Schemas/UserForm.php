@@ -20,7 +20,8 @@ class UserForm
                     ->required(),
                 TextInput::make('password')
                     ->password()
-                    ->required(),
+                    ->dehydrated(fn ($state): bool => filled($state))
+                    ->required(fn (string $operation): bool => $operation === 'create'),
                 TextInput::make('phone')
                     ->tel(),
                 DateTimePicker::make('email_verified_at'),

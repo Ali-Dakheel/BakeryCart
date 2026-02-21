@@ -4,28 +4,25 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderCancellation;
+use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use App\Models\OrderItem;
 
 final readonly class OrderService
 {
     public function __construct(
         private ProductService $productService,
-        private CartService    $cartService
-    )
-    {
-    }
+        private CartService $cartService
+    ) {}
 
     public function generateOrderNumber(): string
     {
         do {
-            $number = 'ORD-' . date('Y') . '-' . str_pad((string)rand(1, 99999), 5, '0', STR_PAD_LEFT);
+            $number = 'ORD-'.date('Y').'-'.str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT);
         } while (Order::where('order_number', $number)->exists());
 
         return $number;
@@ -38,39 +35,31 @@ final readonly class OrderService
             $totals = $this->cartService->calculateTotals($cart);
 
             if ($totals['item_count'] === 0) {
-                throw new \Exception('Cart is empty');
+                throw new \RuntimeException('Cart is empty');
             }
 
-            // Validate stock availability
             foreach ($totals['items'] as $item) {
-                $product = $item->variant ? $item->variant : $item->product;
+                $purchasable = $item->variant ?? $item->product;
 
-                if (!$this->productService->isAvailableForPurchase($product, $item->quantity)) {
-                    throw new \Exception("Product {$item->product->name} is not available");
+                if (! $this->productService->isAvailableForPurchase($purchasable, $item->quantity)) {
+                    throw new \RuntimeException("Product {$item->product->name} is not available");
                 }
             }
 
-            // Apply coupon if provided
             $couponDiscount = 0;
             $couponCode = null;
-            if (!empty($data['coupon_code'])) {
+
+            if (! empty($data['coupon_code'])) {
                 $coupon = $this->validateCoupon($data['coupon_code'], $user);
                 $couponDiscount = $this->calculateCouponDiscount($coupon, $totals['subtotal']);
                 $couponCode = $coupon->code;
             }
 
-            // Calculate tax
             $taxRate = $this->getTaxRate();
-            $taxableAmount = $totals['subtotal'] - $couponDiscount;
-            $taxAmount = $taxableAmount * ($taxRate / 100);
-
-            // Calculate shipping
+            $taxAmount = ($totals['subtotal'] - $couponDiscount) * ($taxRate / 100);
             $shippingFee = $this->calculateShipping($data['shipping_area'] ?? null);
-
-            // Calculate final total
             $total = $totals['subtotal'] - $couponDiscount + $taxAmount + $shippingFee;
 
-            // Create order
             $order = Order::create([
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $user?->id,
@@ -104,10 +93,10 @@ final readonly class OrderService
                 'source' => $data['source'] ?? 'web',
             ]);
 
-            // Create order items
             foreach ($totals['items'] as $cartItem) {
                 $product = $cartItem->product;
                 $variant = $cartItem->variant;
+                $itemTax = ($cartItem->price * $cartItem->quantity) * ($taxRate / 100);
 
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -124,30 +113,25 @@ final readonly class OrderService
                     'image_url' => $product->images->first()?->image_url,
                     'quantity' => $cartItem->quantity,
                     'unit_price' => $cartItem->price,
-                    'tax_amount' => ($cartItem->price * $cartItem->quantity) * ($taxRate / 100),
-                    'total' => $cartItem->subtotal + (($cartItem->price * $cartItem->quantity) * ($taxRate / 100)),
+                    'tax_amount' => $itemTax,
+                    'total' => $cartItem->subtotal + $itemTax,
                 ]);
 
-                // Decrement stock
                 if ($variant) {
                     $variant->decrementStock($cartItem->quantity);
                 } else {
                     $this->productService->decrementStock($product, $cartItem->quantity);
                 }
 
-                // Increment sales count
                 $this->productService->incrementSales($product, $cartItem->quantity);
             }
 
-            // Create initial status history
             $this->addStatusHistory($order, 'pending', 'Order placed');
 
-            // Increment coupon usage
             if ($couponCode) {
                 Coupon::where('code', $couponCode)->increment('used_count');
             }
 
-            // Clear cart
             $this->cartService->clearCart($cart);
 
             return $order->load(['items', 'statusHistories']);
@@ -161,15 +145,14 @@ final readonly class OrderService
         }
 
         DB::transaction(function () use ($order, $newStatus, $user, $notes) {
-            $order->update(['status' => $newStatus]);
+            $attributes = ['status' => $newStatus];
 
             if ($newStatus === 'delivered') {
-                $order->update([
-                    'delivered_at' => now(),
-                    'fulfillment_status' => 'fulfilled',
-                ]);
+                $attributes['delivered_at'] = now();
+                $attributes['fulfillment_status'] = 'fulfilled';
             }
 
+            $order->update($attributes);
             $this->addStatusHistory($order, $newStatus, $notes, $user);
         });
 
@@ -183,14 +166,14 @@ final readonly class OrderService
             'status' => $status,
             'notes' => $notes,
             'changed_by' => $user?->id,
-            'notified_customer' => false, // Set to true when email sent
+            'notified_customer' => false,
             'created_at' => now(),
         ]);
     }
 
     public function cancel(Order $order, string $reason, string $cancelledBy = 'customer'): bool
     {
-        if (!$order->is_cancelable) {
+        if (! $order->is_cancelable) {
             return false;
         }
 
@@ -209,7 +192,6 @@ final readonly class OrderService
                 'cancelled_at' => now(),
             ]);
 
-            // Restore stock
             foreach ($order->items as $item) {
                 if ($item->product_variant_id) {
                     $item->variant->incrementStock($item->quantity);
@@ -233,9 +215,8 @@ final readonly class OrderService
                 'refunded_at' => now(),
             ]);
 
-            $cancellation->order->update([
-                'payment_status' => 'refunded',
-            ]);
+            $cancellation->loadMissing('order');
+            $cancellation->order->update(['payment_status' => 'refunded']);
 
             return true;
         });
@@ -243,63 +224,51 @@ final readonly class OrderService
 
     private function validateCoupon(string $code, ?User $user): Coupon
     {
-        $coupon = Coupon::where('code', $code)
-            ->valid()
-            ->firstOrFail();
+        $coupon = Coupon::where('code', $code)->valid()->firstOrFail();
 
-        // Check usage limit
         if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
-            throw new \Exception('Coupon usage limit reached');
+            throw new \RuntimeException('Coupon usage limit reached');
         }
 
-        // Check per-user limit
         if ($user && $coupon->usage_limit_per_user) {
             $userUsageCount = Order::where('user_id', $user->id)
                 ->where('coupon_code', $code)
                 ->count();
 
             if ($userUsageCount >= $coupon->usage_limit_per_user) {
-                throw new \Exception('You have already used this coupon');
+                throw new \RuntimeException('You have already used this coupon');
             }
         }
 
         return $coupon;
     }
+
     private function calculateCouponDiscount(Coupon $coupon, float $subtotal): float
     {
-        // Check minimum order amount
         if ($coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
-            throw new \Exception("Minimum order amount is {$coupon->min_order_amount} BHD");
+            throw new \RuntimeException('Minimum order amount is '.(string) $coupon->min_order_amount.' BHD');
         }
 
-        $discount = match($coupon->type) {
+        $discount = match ($coupon->type) {
             'percentage' => $subtotal * ($coupon->value / 100),
-            'fixed_amount' => $coupon->value,
-            'free_shipping' => 0, // Handled separately
-            default => 0,
+            'fixed_amount' => (float) $coupon->value,
+            default => 0.0,
         };
 
-        // Apply max discount cap for percentage coupons
         if ($coupon->type === 'percentage' && $coupon->max_discount_amount) {
             $discount = min($discount, $coupon->max_discount_amount);
         }
 
         return $discount;
     }
+
     private function getTaxRate(): float
     {
-        // For now, return 10% VAT
-        // TODO: Implement dynamic tax rate from TaxRate model
         return 10.0;
     }
 
-    /**
-     * Calculate shipping fee
-     */
-    private function calculateShipping(?string $area): float
+    private function calculateShipping(?string $_area): float
     {
-        // For now, flat rate
-        // TODO: Implement delivery zone logic
         return 1.000;
     }
 }

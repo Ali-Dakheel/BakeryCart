@@ -70,14 +70,13 @@ final class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        // Auth::attempt logs user in and sets session cookie
-        if (!Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials)) {
             return $this->error('Invalid credentials', 401);
         }
 
+        /** @var User $user */
         $user = Auth::user();
 
-        // Trigger cart merging and get the merged cart
         $cartToken = request()->cookie('cart_token');
         $cart = $this->cartService->getOrCreateCart($user, $cartToken);
 
@@ -117,17 +116,21 @@ final class AuthController extends Controller
 
     public function user(): JsonResponse
     {
+        /** @var User $user */
+        $user = Auth::user();
+
         return $this->success([
-            'user' => new UserResource(Auth::user()),
+            'user' => new UserResource($user),
         ]);
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
+        /** @var User $user */
         $user = Auth::user();
         $validated = $request->validated();
 
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (! Hash::check($validated['current_password'], $user->password)) {
             return $this->error('Current password is incorrect', 400);
         }
 
@@ -143,5 +146,4 @@ final class AuthController extends Controller
 
         return $this->success(null, 'Password changed successfully. Other devices have been logged out.');
     }
-
 }

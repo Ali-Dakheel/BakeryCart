@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Http\Resources\OrderResource;
 use App\Http\Traits\ApiResponse;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,13 +20,14 @@ final class OrderController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly OrderService $orderService)
-    {
-    }
+    public function __construct(private readonly OrderService $orderService) {}
 
     public function index(): JsonResponse
     {
-        $orders = Auth::user()->orders()
+        /** @var User $user */
+        $user = Auth::user();
+
+        $orders = $user->orders()
             ->with('items')
             ->orderByDesc('created_at')
             ->paginate(15);
@@ -36,6 +38,7 @@ final class OrderController extends Controller
     public function store(CreateOrderRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        /** @var User $user */
         $user = Auth::user();
         $data = [
             'customer_name' => $user->name,
@@ -64,13 +67,10 @@ final class OrderController extends Controller
 
     public function cancel(CancelOrderRequest $request, Order $order): JsonResponse
     {
-        $this->authorize('view', $order);
-
-        if (!$order->is_cancelable) {
-            return $this->error('This order cannot be cancelled', 400);
-        }
+        $this->authorize('cancel', $order);
 
         $validated = $request->validated();
+        $order->load(['items.product', 'items.variant']);
         $this->orderService->cancel($order, $validated['reason'], 'customer');
 
         $order->refresh()->load(['items']);
@@ -85,6 +85,7 @@ final class OrderController extends Controller
         $this->authorize('updateStatus', $order);
 
         $validated = $request->validated();
+        /** @var User $user */
         $user = Auth::user();
         $this->orderService->updateStatus(
             $order,

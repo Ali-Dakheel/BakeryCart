@@ -31,6 +31,7 @@ final class WishlistController extends Controller
 
     public function toggle(Product $product): JsonResponse
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         $wishlistItem = Wishlist::where('user_id', $user->id)
