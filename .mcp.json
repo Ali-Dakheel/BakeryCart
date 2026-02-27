@@ -1,9 +1,11 @@
 {
-  "mcpServers": {
-    "laravel-boost": {
-      "type": "stdio",
-      "command": "C:/Users/Ali-d/.config/herd/bin/php.bat",
-      "args": ["artisan", "boost:mcp"]
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "php",
+            "args": [
+                "artisan",
+                "boost:mcp"
+            ]
+        }
     }
-  }
 }
