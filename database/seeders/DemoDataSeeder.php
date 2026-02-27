@@ -35,13 +35,11 @@ final class DemoDataSeeder extends Seeder
     private function seedAddresses($customers): void
     {
         foreach ($customers as $customer) {
-            // Create 1-2 addresses per customer
             Address::factory()
                 ->count(fake()->numberBetween(1, 2))
                 ->for($customer)
                 ->create();
 
-            // Set first address as default
             $customer->addresses()->first()?->update(['is_default' => true]);
         }
 
@@ -53,7 +51,6 @@ final class DemoDataSeeder extends Seeder
         $orderCount = 0;
 
         foreach ($customers->take(8) as $customer) {
-            // Create 1-3 orders per customer
             $numOrders = fake()->numberBetween(1, 3);
 
             for ($i = 0; $i < $numOrders; $i++) {
@@ -68,7 +65,6 @@ final class DemoDataSeeder extends Seeder
                         'delivered_at' => $status === 'delivered' ? now()->subDays(fake()->numberBetween(1, 30)) : null,
                     ]);
 
-                // Add 1-4 items per order
                 $orderProducts = $products->random(fake()->numberBetween(1, 4));
                 $subtotal = 0;
 
@@ -91,7 +87,6 @@ final class DemoDataSeeder extends Seeder
                     ]);
                 }
 
-                // Update order totals
                 $taxAmount = round($subtotal * 0.10, 3);
                 $shippingFee = 1.000;
                 $total = round($subtotal + $taxAmount + $shippingFee, 3);
@@ -103,7 +98,6 @@ final class DemoDataSeeder extends Seeder
                     'total' => $total,
                 ]);
 
-                // Create payment for paid orders
                 if ($order->payment_status === 'paid') {
                     Payment::create([
                         'order_id' => $order->id,
@@ -119,7 +113,6 @@ final class DemoDataSeeder extends Seeder
                     ]);
                 }
 
-                // Add status history
                 $order->statusHistories()->create([
                     'status' => $order->status,
                     'notes' => 'Order ' . ($status === 'pending' ? 'placed' : $status),
@@ -138,22 +131,16 @@ final class DemoDataSeeder extends Seeder
     {
         $reviewCount = 0;
 
-        // Get customers who have delivered orders
         $customersWithOrders = $customers->filter(function ($customer) {
             return $customer->orders()->where('status', 'delivered')->exists();
         });
 
         foreach ($customersWithOrders as $customer) {
-            $deliveredOrders = $customer->orders()->where('status', 'delivered')->get();
+            $deliveredOrders = $customer->orders()->where('status', 'delivered')->with('items')->get();
 
             foreach ($deliveredOrders as $order) {
-                // 60% chance to leave a review
                 if (fake()->boolean(60)) {
-                    $orderItems = $order->items;
-
-                    // Review 1-2 products from the order
-                    foreach ($orderItems->take(fake()->numberBetween(1, 2)) as $item) {
-                        // Skip if user already reviewed this product
+                    foreach ($order->items->take(fake()->numberBetween(1, 2)) as $item) {
                         $existingReview = Review::where('user_id', $customer->id)
                             ->where('product_id', $item->product_id)
                             ->exists();
@@ -166,9 +153,9 @@ final class DemoDataSeeder extends Seeder
                             'product_id' => $item->product_id,
                             'user_id' => $customer->id,
                             'order_id' => $order->id,
-                            'rating' => fake()->randomElement([4, 4, 5, 5, 5]), // Weighted towards positive
+                            'rating' => fake()->randomElement([4, 4, 5, 5, 5]),
                             'title' => fake()->optional(0.7)->sentence(4),
-                            'comment' => fake()->paragraph(), // Required field
+                            'comment' => fake()->paragraph(),
                             'is_verified_purchase' => true,
                             'is_approved' => fake()->boolean(90),
                             'helpful_count' => fake()->numberBetween(0, 20),
