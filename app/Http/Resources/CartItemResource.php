@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,6 +16,7 @@ final class CartItemResource extends JsonResource
         $locale = $request->header('Accept-Language', 'en');
         $locale = substr($locale, 0, 2); // Get first 2 characters
         $productTranslation = $this->product->translations->where('locale', $locale)->first();
+
         return [
             'id' => $this->id,
             'cart_id' => $this->cart_id,
@@ -24,7 +26,7 @@ final class CartItemResource extends JsonResource
                 'id' => $this->product->id,
                 'sku' => $this->product->sku,
                 'name' => $productTranslation?->name ?? 'Unnamed Product',
-                'images' => $this->product->images->map(function ($image) {
+                'images' => $this->product->images->map(function (ProductImage $image) {
                     return [
                         'id' => $image->id,
                         'url' => $image->image_url,
@@ -33,7 +35,7 @@ final class CartItemResource extends JsonResource
                     ];
                 })->values(),
             ],
-            'variant' => $this->when($this->variant, function () use ($locale) {
+            'variant' => $this->when($this->variant, function () {
                 return [
                     'id' => $this->variant->id,
                     'name' => $this->variant->name,
@@ -41,8 +43,8 @@ final class CartItemResource extends JsonResource
                 ];
             }),
             'quantity' => $this->quantity,
-            'price_snapshot' => (float)$this->price,
-            'subtotal' => (float)$this->subtotal,
+            'price_snapshot' => (float) $this->price,
+            'subtotal' => (float) $this->subtotal,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

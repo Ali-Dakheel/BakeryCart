@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Category;
@@ -23,11 +25,12 @@ class CategoryTranslationFactory extends Factory
             'locale' => 'en',
             'name' => fake()->randomElement([
                 'Bread', 'Pastries', 'Croissants', 'Baguettes',
-                'Sourdough', 'Cakes', 'Cookies', 'Danishes'
+                'Sourdough', 'Cakes', 'Cookies', 'Danishes',
             ]),
             'description' => fake()->optional(0.7)->sentence(),
         ];
     }
+
     public function english(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -44,9 +47,8 @@ class CategoryTranslationFactory extends Factory
             'locale' => 'ar',
             'name' => fake()->randomElement([
                 'خبز', 'معجنات', 'كرواسون', 'باجيت',
-                'عجين مخمر', 'كيك', 'بسكويت', 'دانش'
+                'عجين مخمر', 'كيك', 'بسكويت', 'دانش',
             ]),
         ]);
     }
-
 }

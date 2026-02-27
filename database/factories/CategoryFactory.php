@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Category;
@@ -14,16 +16,18 @@ class CategoryFactory extends Factory
 {
     /** @var class-string<Model> */
     protected $model = Category::class;
+
     /** @return array<string, mixed> */
     public function definition(): array
     {
         $name = fake()->randomElement([
             'Bread', 'Pastries', 'Croissants', 'Baguettes',
             'Sourdough', 'Cakes', 'Cookies', 'Danishes',
-            'Muffins', 'Scones', 'Tarts', 'Pies'
+            'Muffins', 'Scones', 'Tarts', 'Pies',
         ]);
+
         return [
-            'slug' => Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 1000),
+            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 1000),
             'description' => fake()->optional(0.7)->sentence(),
             'image_url' => fake()->optional(0.5)->imageUrl(400, 300, 'food'),
             'icon' => fake()->optional(0.3)->randomElement(['🍞', '🥐', '🧁', '🥖', '🍰']),
@@ -33,6 +37,7 @@ class CategoryFactory extends Factory
             'meta_description' => fake()->optional(0.5)->sentence(10),
         ];
     }
+
     public function withTranslations(): static
     {
         return $this->afterCreating(function (Category $category) {
@@ -41,7 +46,7 @@ class CategoryFactory extends Factory
                 'locale' => 'en',
                 'name' => fake()->randomElement([
                     'Bread', 'Pastries', 'Croissants', 'Baguettes',
-                    'Sourdough', 'Cakes', 'Cookies', 'Danishes'
+                    'Sourdough', 'Cakes', 'Cookies', 'Danishes',
                 ]),
                 'description' => fake()->sentence(),
             ]);
@@ -51,18 +56,20 @@ class CategoryFactory extends Factory
                 'locale' => 'ar',
                 'name' => fake()->randomElement([
                     'خبز', 'معجنات', 'كرواسون', 'باجيت',
-                    'عجين مخمر', 'كيك', 'بسكويت', 'دانش'
+                    'عجين مخمر', 'كيك', 'بسكويت', 'دانش',
                 ]),
                 'description' => fake()->sentence(),
             ]);
         });
     }
+
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
             'is_active' => true,
         ]);
     }
+
     public function inactive(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -76,6 +83,4 @@ class CategoryFactory extends Factory
             'parent_id' => $parent->id,
         ]);
     }
-
-
 }

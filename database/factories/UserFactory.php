@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\User;
@@ -15,6 +17,7 @@ class UserFactory extends Factory
 {
     /** @var class-string<Model> */
     protected $model = User::class;
+
     /**
      * The current password being used by the factory.
      */
@@ -33,7 +36,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'phone'=> fake()->optional(0.7)->numerify('+973-####-####'),
+            'phone' => fake()->optional(0.7)->numerify('+973-####-####'),
         ];
     }
 
@@ -58,8 +61,8 @@ class UserFactory extends Factory
     public function staff(): static
     {
         return $this->state(fn (array $attributes) => [
-            'name' => fake()->name() . ' (Staff)',
-            'email' => 'staff.' . fake()->unique()->userName() . '@easybake.bh',
+            'name' => fake()->name().' (Staff)',
+            'email' => 'staff.'.fake()->unique()->userName().'@easybake.bh',
         ])->afterCreating(function (User $user) {
             $user->assignRole('staff');
         });
@@ -68,8 +71,8 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'name' => fake()->name() . ' (Admin)',
-            'email' => 'admin.' . fake()->unique()->userName() . '@easybake.bh',
+            'name' => fake()->name().' (Admin)',
+            'email' => 'admin.'.fake()->unique()->userName().'@easybake.bh',
         ])->afterCreating(function (User $user) {
             $user->assignRole('admin');
         });
@@ -81,5 +84,4 @@ class UserFactory extends Factory
             'phone' => null,
         ]);
     }
-
 }

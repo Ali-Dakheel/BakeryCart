@@ -36,10 +36,8 @@ final class AuthController extends Controller
         ]);
         $user->assignRole('customer');
 
-        // Log user in (sets session cookie - secure, HttpOnly)
         Auth::login($user);
 
-        // Trigger cart merging and get the merged cart
         $cartToken = request()->cookie('cart_token');
         $cart = $this->cartService->getOrCreateCart($user, $cartToken);
 
@@ -48,7 +46,6 @@ final class AuthController extends Controller
             'Registration successful'
         );
 
-        // Update cart token cookie if needed (cart may have new session_id after merge)
         if ($cart->session_id && $cart->session_id !== $cartToken) {
             $response->cookie(
                 'cart_token',
@@ -85,7 +82,6 @@ final class AuthController extends Controller
             'Login successful'
         );
 
-        // Update cart token cookie if needed (cart may have new session_id after merge)
         if ($cart->session_id && $cart->session_id !== $cartToken) {
             $response->cookie(
                 'cart_token',
@@ -107,7 +103,6 @@ final class AuthController extends Controller
     {
         Auth::logout();
 
-        // Invalidate session for security
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 

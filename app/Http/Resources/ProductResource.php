@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -40,7 +42,7 @@ final class ProductResource extends JsonResource
                 ];
             }),
             'images' => $this->whenLoaded('images', function () {
-                return $this->images->sortBy('sort_order')->map(fn ($img) => [
+                return $this->images->sortBy('sort_order')->map(fn (ProductImage $img) => [
                     'id' => $img->id,
                     'url' => $img->image_url,
                     'alt' => $img->alt_text,
@@ -49,7 +51,7 @@ final class ProductResource extends JsonResource
             }),
             'variants' => $this->whenLoaded('variants', function () {
                 return $this->variants->where('is_available', true)
-                    ->sortBy('sort_order')->map(fn ($v) => [
+                    ->sortBy('sort_order')->map(fn (ProductVariant $v) => [
                         'id' => $v->id,
                         'name' => $v->name,
                         'sku' => $v->sku,

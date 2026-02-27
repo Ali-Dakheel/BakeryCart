@@ -28,11 +28,13 @@ final class Category extends Model
         'is_active',
     ];
 
-    /** @var array<string, string> */
-    protected $casts = [
-        'is_active' => 'boolean',
-        'sort_order' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
+        ];
+    }
 
     public function parent(): BelongsTo
     {

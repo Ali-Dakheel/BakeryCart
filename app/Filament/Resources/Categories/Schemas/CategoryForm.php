@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Categories\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
@@ -16,7 +16,9 @@ class CategoryForm
         return $schema
             ->components([
                 Select::make('parent_id')
-                    ->relationship('parent', 'id'),
+                    ->relationship('parent', 'slug')
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('slug')
                     ->required(),
                 FileUpload::make('image_url')

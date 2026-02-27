@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Category;
@@ -45,7 +47,7 @@ class CategorySeeder extends Seeder
             ]);
         }
 
-        $this->command->info('Categories seeded: ' . count($categories) . ' categories with translations');
+        $this->command->info('Categories seeded: '.count($categories).' categories with translations');
     }
 
     private function getCategories(): array

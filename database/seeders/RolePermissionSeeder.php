@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -59,14 +60,13 @@ class RolePermissionSeeder extends Seeder
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        //customer role
+        // customer role
         $customer = Role::create(['name' => 'customer', 'guard_name' => 'web']);
         $customer->givePermissionTo([
             'view products',
             'view orders',
             'view reviews',
         ]);
-
 
         // staff role
         $staff = Role::Create(['name' => 'staff', 'guard_name' => 'web']);

@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Reviews\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
@@ -16,12 +16,18 @@ class ReviewForm
         return $schema
             ->components([
                 Select::make('product_id')
-                    ->relationship('product', 'id')
+                    ->relationship('product', 'sku')
+                    ->searchable()
+                    ->preload()
                     ->required(),
                 Select::make('user_id')
-                    ->relationship('user', 'name'),
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload(),
                 Select::make('order_id')
-                    ->relationship('order', 'id'),
+                    ->relationship('order', 'order_number')
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('rating')
                     ->required()
                     ->numeric(),

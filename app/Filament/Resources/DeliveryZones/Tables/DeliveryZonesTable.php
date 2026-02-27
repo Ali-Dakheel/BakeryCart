@@ -40,6 +40,7 @@ class DeliveryZonesTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('sort_order', 'asc')
             ->filters([
                 //
             ])

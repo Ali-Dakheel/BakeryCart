@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,7 +40,7 @@ final class CategoryResource extends JsonResource
                 return $this->children
                     ->where('is_active', true)
                     ->sortBy('sort_order')
-                    ->map(function ($child) use ($locale) {
+                    ->map(function (Category $child) use ($locale) {
                         $childTranslation = $child->relationLoaded('translations')
                             ? $child->translations->where('locale', $locale)->first()
                             : null;
