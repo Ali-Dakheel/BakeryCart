@@ -5,7 +5,7 @@ ENV TZ=UTC
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Add ondrej/php PPA for latest PHP 8.3 packages on Ubuntu 24.04
+# Add ondrej/php PPA for latest PHP 8.4 packages on Ubuntu 24.04
 RUN apt-get update && apt-get install -y gnupg curl ca-certificates zip unzip git \
     && mkdir -p /etc/apt/keyrings \
     && curl -sS 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xb8dc7e53946656efbce4c1dd71daeaab4ad4cab6' \
@@ -14,19 +14,19 @@ RUN apt-get update && apt-get install -y gnupg curl ca-certificates zip unzip gi
        > /etc/apt/sources.list.d/ppa_ondrej_php.list \
     && apt-get update
 
-# Install PHP 8.3 FPM + required extensions + Nginx + Supervisor
+# Install PHP 8.4 FPM + required extensions + Nginx + Supervisor
 RUN apt-get install -y \
-    php8.3-fpm \
-    php8.3-cli \
-    php8.3-mysql \
-    php8.3-mbstring \
-    php8.3-xml \
-    php8.3-zip \
-    php8.3-bcmath \
-    php8.3-curl \
-    php8.3-intl \
-    php8.3-gd \
-    php8.3-opcache \
+    php8.4-fpm \
+    php8.4-cli \
+    php8.4-mysql \
+    php8.4-mbstring \
+    php8.4-xml \
+    php8.4-zip \
+    php8.4-bcmath \
+    php8.4-curl \
+    php8.4-intl \
+    php8.4-gd \
+    php8.4-opcache \
     nginx \
     supervisor \
     && apt-get clean \
@@ -52,8 +52,8 @@ RUN chown -R www-data:www-data /var/www/html \
 # Copy Docker config files
 COPY docker/nginx.conf /etc/nginx/sites-available/default
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/php.ini /etc/php/8.3/fpm/conf.d/99-production.ini
-COPY docker/php-fpm.conf /etc/php/8.3/fpm/pool.d/www.conf
+COPY docker/php.ini /etc/php/8.4/fpm/conf.d/99-production.ini
+COPY docker/php-fpm.conf /etc/php/8.4/fpm/pool.d/www.conf
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
