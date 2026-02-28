@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Coupon;
+use App\Models\DeliveryZoneArea;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\OrderItem;
@@ -55,26 +56,28 @@ final readonly class OrderService
                 $couponCode = $coupon->code;
             }
 
+            $deliveryType = $data['delivery_type'] ?? 'delivery';
             $taxRate = $this->getTaxRate();
             $taxAmount = ($totals['subtotal'] - $couponDiscount) * ($taxRate / 100);
-            $shippingFee = $this->calculateShipping($data['shipping_area'] ?? null);
+            $shippingFee = $this->calculateShipping($data['shipping_area'] ?? null, $totals['subtotal'], $deliveryType);
             $total = $totals['subtotal'] - $couponDiscount + $taxAmount + $shippingFee;
 
             $order = Order::create([
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $user?->id,
+                'delivery_type' => $deliveryType,
                 'customer_name' => $data['customer_name'],
                 'customer_email' => $data['customer_email'],
                 'customer_phone' => $data['customer_phone'] ?? null,
-                'shipping_name' => $data['shipping_name'],
-                'shipping_phone' => $data['shipping_phone'],
-                'shipping_address_line_1' => $data['shipping_address_line_1'],
+                'shipping_name' => $data['shipping_name'] ?? null,
+                'shipping_phone' => $data['shipping_phone'] ?? null,
+                'shipping_address_line_1' => $data['shipping_address_line_1'] ?? null,
                 'shipping_address_line_2' => $data['shipping_address_line_2'] ?? null,
                 'shipping_building' => $data['shipping_building'] ?? null,
                 'shipping_floor' => $data['shipping_floor'] ?? null,
                 'shipping_apartment' => $data['shipping_apartment'] ?? null,
-                'shipping_area' => $data['shipping_area'],
-                'shipping_city' => $data['shipping_city'] ?? 'Manama',
+                'shipping_area' => $data['shipping_area'] ?? null,
+                'shipping_city' => $data['shipping_city'] ?? null,
                 'delivery_instructions' => $data['delivery_instructions'] ?? null,
                 'subtotal' => $totals['subtotal'],
                 'coupon_code' => $couponCode,
@@ -267,8 +270,24 @@ final readonly class OrderService
         return 10.0;
     }
 
-    private function calculateShipping(?string $_area): float
+    private function calculateShipping(?string $area, float $cartTotal, string $deliveryType): float
     {
-        return 1.000;
+        if ($deliveryType === 'pickup') {
+            return 0.000;
+        }
+
+        if ($area === null) {
+            return 1.000;
+        }
+
+        $zoneArea = DeliveryZoneArea::whereRaw('LOWER(area_name) = LOWER(?)', [$area])->first();
+
+        if (! $zoneArea) {
+            return 1.000;
+        }
+
+        $zone = $zoneArea->deliveryZone;
+
+        return ($zone?->is_active) ? $zone->calculateFee($cartTotal) : 1.000;
     }
 }
