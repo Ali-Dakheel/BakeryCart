@@ -7,7 +7,7 @@ echo "[start.sh] Running Laravel production startup..."
 
 # Run database migrations
 echo "[start.sh] Running migrations..."
-php artisan migrate --force
+php artisan migrate:fresh --force
 
 # Cache config, routes, events, views for performance
 echo "[start.sh] Optimizing..."
