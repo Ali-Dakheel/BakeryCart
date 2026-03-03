@@ -15,16 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware(['api', 'api.version'])
                 ->prefix('api/v1')
                 ->group(base_path('routes/api/v1.php'));
-
-            Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api/legacy.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'api.version' => \App\Http\Middleware\ApiVersionHeader::class,
         ]);
+
+        // Trust reverse proxy (Traefik/Coolify) so HTTPS scheme is correct in generated URLs
+        $middleware->trustProxies(at: '*');
 
         // Enable Sanctum stateful API authentication (Laravel 12 way)
         $middleware->statefulApi();
